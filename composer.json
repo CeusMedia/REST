@@ -19,6 +19,7 @@
   "require": {
     "php": ">=5.3.0",
     "ceus-media/common": "^0.8.2",
+    "ceus-media/router": "dev-master",
     "ceus-media/cache": "dev-master"
   },
   "require-dev": {
