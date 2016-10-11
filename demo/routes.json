@@ -1,0 +1,38 @@
+[
+  {
+    "controller": "\\Controller_Index",
+    "action": "index",
+    "pattern": "",
+    "method": "GET"
+  },{
+    "controller": "Controller_Test",
+    "action": "index",
+    "pattern": "test",
+    "method": "GET"
+  },{
+    "controller": "Controller_Test",
+    "action": "create",
+    "pattern": "test",
+    "method": "POST"
+  },{
+    "controller": "Controller_Test",
+    "action": "read",
+    "pattern": "test/:testId",
+    "method": "GET"
+  },{
+    "controller": "Controller_Test",
+    "action": "update",
+    "pattern": "test/:testId",
+    "method": "PUT"
+  },{
+    "controller": "Controller_Test",
+    "action": "delete",
+    "pattern": "test/:testId",
+    "method": "DELETE"
+  },{
+    "controller": "Controller_Test",
+    "action": "details",
+    "pattern": "test/:testId/details",
+    "method": "GET"
+  }
+]
