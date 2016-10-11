@@ -1,7 +1,11 @@
 <?php
 class Controller_Index{
 
+	public function __construct( $resources ){
+		$this->resources	= $resources;
+	}
+
 	public function index(){
-		return 'ESMB Server Index';
+		return 'HTTP REST Server Index';
 	}
 }?>

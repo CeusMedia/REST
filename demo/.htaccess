@@ -1,7 +1,7 @@
 
 #  PROTECT JSON & LOG FILES
 #  ------------------------------
-<Files ~ "\.(json|log)$">
+<Files ~ "\.(log)$">
     Deny From All
 </Files>
 
