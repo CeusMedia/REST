@@ -45,6 +45,6 @@ class JSON{
 
 	public function transform( $response, $content ){
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
-		return json_encode( $content );
+		return json_encode( $content, JSON_PRETTY_PRINT );
 	}
 }
