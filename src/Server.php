@@ -94,22 +94,45 @@ class Server{
 		return $this->resources;
 	}
 
+	protected function handleException( $e ){
+		if( $e instanceof \OutOfRangeException ){
+			$this->response->setStatus( 404 );
+			$result		= $e->getMessage();
+		}
+		else{
+			if( (int) $this->response->getStatus() < 400 ){
+				$this->response->setStatus( 500 );
+				if( count( $e->getCode() ) === 3 )
+					$this->response->setStatus( $e->getCode() );
+			}
+			$result		= $e->getMessage();
+		}
+		return $result;
+	}
+
 	public function handleRequest(){
 //		$path	= substr( getEnv( 'REDIRECT_URL' ), strlen( $this->rootPath ) );
 		$path	= substr( getEnv( 'REQUEST_URI' ), strlen( $this->rootPath ) );
 		if( strpos( $path, '?' ) !== FALSE )
 			$path	= substr( $path, 0, strpos( $path, '?' ) );
+		if( preg_match( '/\.\w+$/', $path ) )
+			$path	= substr( $path, 0, strrpos( $path, '.' ) );
 
 		$route	= $this->router->resolve( $path, getEnv( 'REQUEST_METHOD' ) );
 		if( $route ){
 			error_log( json_encode( $route )."\n", 3, "routes.log" );
 			if( !class_exists( $route->controller ) )
 				throw new \RangeException( 'Class "'.$route->controller.'" is not existing' );
-			$object		= \Alg_Object_Factory::createObject( $route->controller, $this->resources );
-			$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->action, $route->arguments );
+			try{
+				$object		= \Alg_Object_Factory::createObject( $route->controller, $this->resources );
+				$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->action, $route->arguments );
+			}
+			catch( \Exception $e ){
+				$result	= $this->handleException( $e );
+			}
 		}
 		else{
-			$this->response->setStatus( 400 );
+			$this->response->setStatus( 404 );
 			$result		= 'No content found for this route.';
 		}
 		$format		= $this->negotiateResponseFormat( $result );
@@ -119,12 +142,16 @@ class Server{
 	}
 
 	protected function negotiateResponseFormat( $content ){
-		if( $this->request->has( 'forceAccept' ) )
-			$accepts	= array( $this->request->get( 'forceAccept' ) => 1 );
-		else if( $this->options->forceMimeType )
+		$requestUri	= getEnv( 'REQUEST_URI' );
+		$accepts	= $this->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
+		if( $this->options->forceMimeType )
 			$accepts	= array( $this->options->forceMimeType => 1 );
-		else
-			$accepts	= $this->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
+//		if( $this->request->has( 'forceAccept' ) )
+//			$accepts	= array( $this->request->get( 'forceAccept' ) => 1 );
+		if( preg_match( '/\.\w+$/', $requestUri ) )
+			foreach( $this->formats as $format )
+				if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $requestUri ) )
+					$accepts	= array( $format->mimeTypes[0] => 1 );
 
 		foreach( $accepts as $mimeType => $quality )
 			foreach( $this->formats as $format )

@@ -37,9 +37,11 @@ namespace CeusMedia\REST\Server\Format;
  */
 class JSON{
 
-	public $mimeTypes	= array( 'application/json' );
-
 	public $contentType	= 'application/json';
+
+	public $extension	= '.json';
+
+	public $mimeTypes	= array( 'application/json' );
 
 	public function transform( $response, $content ){
 		$response->addHeaderPair( 'Content-Type', $this->contentType );

@@ -37,9 +37,11 @@ namespace CeusMedia\REST\Server\Format;
  */
 class HTML{
 
-	public $mimeTypes	= array( 'text/html' );
-
 	public $contentType	= 'text/html';
+
+	public $extension	= '.html';
+
+	public $mimeTypes	= array( 'text/html' );
 
 	public function transform( $response, $content ){
 		if( is_object( $content ) )

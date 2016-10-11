@@ -37,9 +37,11 @@ namespace CeusMedia\REST\Server\Format;
  */
 class PHP{
 
-	public $mimeTypes	= array( 'application/x-php' );
-
 	public $contentType	= 'application/x-php';
+
+	public $extension	= '.php';
+
+	public $mimeTypes	= array( 'application/x-php' );
 
 	public function transform( $response, $content ){
 		$response->addHeaderPair( 'Content-Type', $this->contentType );

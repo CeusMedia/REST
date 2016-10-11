@@ -37,13 +37,15 @@ namespace CeusMedia\REST\Server\Format;
  */
 class XML{
 
+	public $contentType	= 'application/xhtml+xml';
+
+	public $extension	= '.xml';
+
 	public $mimeTypes	= array(
 		'application/xml',
 		'text/xml',
 		'application/xhtml+xml'
 	);
-
-	public $contentType	= 'application/xhtml+xml';
 
 	public function transform( $response, $content ){
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
