@@ -31,8 +31,8 @@
     "method": "DELETE"
   },{
     "controller": "Controller_Test",
-    "action": "details",
-    "pattern": "test/:testId/details",
+    "action": "views",
+    "pattern": "test/:testId/views",
     "method": "GET"
   }
 ]

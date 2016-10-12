@@ -36,7 +36,8 @@ class Controller_Test {
 	}
 
 
-	public function details( $testId ){
-
+	public function views( $testId ){
+		$item	= $this->model->read( $testId );
+		return $item['views'];
 	}
 }
