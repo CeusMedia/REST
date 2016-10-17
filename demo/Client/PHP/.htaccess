@@ -1,0 +1,36 @@
+
+#  PROTECT JSON & LOG FILES
+#  ------------------------------
+<Files ~ "\.(log)$">
+    Deny From All
+</Files>
+
+
+#  SETTINGS
+#  ------------------------------
+Options +FollowSymLinks -Indexes
+DirectoryIndex index.php
+
+
+#  DEFAULT ROUTE
+#  ------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^$ index.php [QSA,L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+
+#  DISABLE ETAGS
+#  ------------------------------
+FileETag none
+
+
+#  AUTHENTICATION
+#  ------------------------------
+#AuthType Basic
+#AuthName "My Project"
+#AuthUserFile /var/www/path/to/server/.htpasswd
+#Require valid-user
