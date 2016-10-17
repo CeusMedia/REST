@@ -27,6 +27,9 @@ class View_Index{
 	<h3>Tests</h3>
 	<div class="content-panel-inner">
 		'.$table.'
+		<div class="buttonbar">
+			<a href="./?action=add" class="btn btn-primary">add</a>
+		</div>
 	</div>
 </div>';
 		return $content;

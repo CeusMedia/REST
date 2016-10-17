@@ -29,6 +29,10 @@ class Demo{
 	protected function dispatch(){
 		$action	= $this->request->get( 'action' );
 		switch( $action ){
+			case 'add':
+				$view	= new View_Add( $this->client, $this->request );
+				$result	= $view->render();
+				break;
 			case 'edit':
 				$view	= new View_Edit( $this->client, $this->request );
 				$result	= $view->render();
