@@ -56,7 +56,7 @@ class Server{
 		$this->request	= new \Net_HTTP_Request_Receiver();
 		$this->response	= new \Net_HTTP_Response();
 		$this->router	= new \CeusMedia\Router\Router();
-		$this->rootPath	= rtrim( dirname( getEnv( 'SCRIPT_NAME' ) ), '/' ).'/';
+		$this->buffer	= new \UI_OutputBuffer();
 
 		$this->resources	= array(
 			'server'		=> $this,
@@ -76,6 +76,8 @@ class Server{
 				$this->formats[$format] = $object;
 			}
 		}
+
+		register_shutdown_function( array( $this, "handleFatalError" ) );
 	}
 
 	public function getRouter(){
@@ -95,9 +97,12 @@ class Server{
 	}
 
 	protected function handleException( $e ){
-		if( $e instanceof \OutOfRangeException ){
+		if( $e instanceof ResolverException ){
 			$this->response->setStatus( 404 );
-			$result		= $e->getMessage();
+			$result		= 'No content found for this route.';
+		}
+		else if( $e instanceof \OutOfRangeException ){
+			$this->response->setStatus( 404 );
 		}
 		else{
 			if( (int) $this->response->getStatus() < 400 ){
@@ -105,52 +110,55 @@ class Server{
 				if( count( $e->getCode() ) === 3 )
 					$this->response->setStatus( $e->getCode() );
 			}
-			$result		= $e->getMessage();
 		}
-		return $result;
+		return $e->getMessage();
 	}
 
+	public function handleFatalError(){
+		$error	= error_get_last();
+		if( !$error )
+			return;
+		$this->buffer->close();
+		$this->response->setStatus( 500 );
+		$this->response->setBody( $error['message'] );
+		\Net_HTTP_Response_Sender::sendResponse( $this->response );
+		exit;
+	}
+
+	/**
+	 *	@todo		abstract logging - use logger interface
+	 */
 	public function handleRequest(){
-//		$path	= substr( getEnv( 'REDIRECT_URL' ), strlen( $this->rootPath ) );
-		$path	= substr( getEnv( 'REQUEST_URI' ), strlen( $this->rootPath ) );
+		$path	= $this->request->getPath();
+		$method	= $this->request->getMethod();
+
 		if( strpos( $path, '?' ) !== FALSE )
 			$path	= substr( $path, 0, strpos( $path, '?' ) );
 		if( preg_match( '/\.\w+$/', $path ) )
 			$path	= substr( $path, 0, strrpos( $path, '.' ) );
 
-		$route	= $this->router->resolve( $path, getEnv( 'REQUEST_METHOD' ) );
-		if( $route ){
-			error_log( json_encode( $route )."\n", 3, "routes.log" );
-			if( !class_exists( $route->controller ) )
-				throw new \RangeException( 'Class "'.$route->controller.'" is not existing' );
-			try{
-				$object		= \Alg_Object_Factory::createObject( $route->controller, $this->resources );
-				$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->action, $route->arguments );
-			}
-			catch( \Exception $e ){
-				$result	= $this->handleException( $e );
-			}
+		try{
+			$route		= $this->router->resolve( $path, $method );
+			$result		= $this->realizeResolvedRoute( $route );
+			$format		= $this->negotiateResponseFormat( $result );
+			$content	= $format->transform( $this->response, $result );
+			$this->response->setBody( $content );
+			\Net_HTTP_Response_Sender::sendResponse( $this->response );
 		}
-		else{
-			$this->response->setStatus( 404 );
-			$result		= 'No content found for this route.';
+		catch( \Exception $e ){
+			$content	= $this->handleException( $e );
 		}
-		$format		= $this->negotiateResponseFormat( $result );
-		$content	= $format->transform( $this->response, $result );
-		$this->response->setBody( $content );
-		\Net_HTTP_Response_Sender::sendResponse( $this->response );
 	}
 
 	protected function negotiateResponseFormat( $content ){
-		$requestUri	= getEnv( 'REQUEST_URI' );
+		$path		= $this->request->getPath();
 		$accepts	= $this->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
 		if( $this->options->forceMimeType )
 			$accepts	= array( $this->options->forceMimeType => 1 );
-//		if( $this->request->has( 'forceAccept' ) )
-//			$accepts	= array( $this->request->get( 'forceAccept' ) => 1 );
-		if( preg_match( '/\.\w+$/', $requestUri ) )
+
+		if( preg_match( '/\.\w+$/', $path ) )
 			foreach( $this->formats as $format )
-				if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $requestUri ) )
+				if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $path ) )
 					$accepts	= array( $format->mimeTypes[0] => 1 );
 
 		foreach( $accepts as $mimeType => $quality )
@@ -158,6 +166,18 @@ class Server{
 				if( in_array( $mimeType, $format->mimeTypes) )
 					return $format;
 		throw new \RuntimeException( 'Content type is not supported' );
+	}
+
+	protected function realizeResolvedRoute( \CeusMedia\Router\Route $route ){
+//		error_log( json_encode( $route )."\n", 3, "routes.log" );
+		if( !class_exists( $route->getController() ) )
+			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
+		$object		= \Alg_Object_Factory::createObject( $route->getController(), $this->resources );
+		$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->getAction(), (array) $route->getArguments() );
+		if( $this->buffer->has() ){
+			throw new \RuntimeException( $this->buffer->get( TRUE ), 500 );
+		}
+		return $result;
 	}
 
 	public function setResource( $key, $object ){

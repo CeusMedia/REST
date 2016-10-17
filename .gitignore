@@ -2,5 +2,5 @@ vendor
 composer.lock
 doc/API
 doc/Test
-demo/data/*
-demo/*
+demo/Server/data/*
+demo/Server/*.log
