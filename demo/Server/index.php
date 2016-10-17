@@ -1,5 +1,5 @@
 <?php
-(@include '../vendor/autoload.php') or die('Please use composer to install required packages.' . PHP_EOL);
+(@include '../../vendor/autoload.php') or die('Please use composer to install required packages.' . PHP_EOL);
 
 use \CeusMedia\REST\Server as Server;
 
