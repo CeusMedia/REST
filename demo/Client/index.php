@@ -7,7 +7,7 @@ error_reporting( E_ALL );
 \Loader::registerNew( 'php', NULL, './src/' );
 new UI_DevOutput;
 
-$baseUri	= 'http://'.getEnv( 'SERVER_NAME' ).dirname( getEnv( 'REQUEST_URI' ) ).'/';
+$baseUri	= 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'REQUEST_URI' ) ).'/Server/';
 
 try{
 	$client	= new Client( $baseUri );

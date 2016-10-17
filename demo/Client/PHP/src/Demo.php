@@ -7,8 +7,8 @@ class Demo{
 	public function __construct(){
 
 		$pathApp	= dirname( getEnv( 'SCRIPT_NAME' ) );
-		$pathServer	= dirname( dirname( $pathApp ) );
-		$baseUri	= 'http://'.getEnv( 'SERVER_NAME' ).$pathServer.'/';
+		$pathServer	= dirname( dirname( $pathApp ) ).'/Server/';
+		$baseUri	= 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).$pathServer;
 		$this->client	= new Client( $baseUri );
 		$this->client->expectFormat( 'JSON' );
 		$this->client->expectFormat( 'PHP' );
