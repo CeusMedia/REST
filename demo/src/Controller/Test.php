@@ -1,13 +1,35 @@
 <?php
-class Controller_Test {
+class Controller_Test extends \CeusMedia\REST\Server\Controller{
 
 	public function __construct( $resources ){
 		$this->resources	= $resources;
 		$this->model		= new \Resource_Model_File_JSON( 'data/test.json' );
 	}
 
+	public function flush(){
+		return $this->model->flush();
+	}
+
 	public function index(){
-		return $this->model->index();
+		$order	= $this->resources->request->get( 'order' );
+		$limit	= max( (int) $this->resources->request->get( 'limit' ), 0 );
+		$limit	= $limit ? $limit : 100;
+		$page	= max( (int) $this->resources->request->get( 'page' ), 1 );
+		$total	= $this->model->count();
+
+		//  --  DISCOVERY  --  //
+//		print_m( $this->resources->request->getAllFromSource( 'GET' ) );die;
+		$this->decoratePagination( $total, $limit, $page, $this->resources->request->getAllFromSource( 'GET' )->getAll() );
+
+		$data	= array(
+			'items'	=> $this->model->index( $limit, $page ),
+			'range'	=> array(
+				'limit'	=> $limit,
+				'page'	=> $page,
+				'total'	=> $total,
+			)
+		);
+		return $data;
 	}
 
 	public function create(){

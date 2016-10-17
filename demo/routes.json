@@ -17,22 +17,22 @@
   },{
     "controller": "Controller_Test",
     "action": "read",
-    "pattern": "test/:testId",
+    "pattern": "test\/:testId",
     "method": "GET"
   },{
     "controller": "Controller_Test",
     "action": "update",
-    "pattern": "test/:testId",
+    "pattern": "test\/:testId",
     "method": "PUT"
   },{
     "controller": "Controller_Test",
     "action": "delete",
-    "pattern": "test/:testId",
+    "pattern": "test\/:testId",
     "method": "DELETE"
   },{
     "controller": "Controller_Test",
     "action": "views",
-    "pattern": "test/:testId/views",
+    "pattern": "test\/:testId/views",
     "method": "GET"
   }
 ]

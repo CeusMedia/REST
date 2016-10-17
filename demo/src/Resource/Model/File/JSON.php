@@ -15,6 +15,10 @@ class Resource_Model_File_JSON{
 		return array_key_exists( $id, $this->items );
 	}
 
+	public function count(){
+		return count( $this->items );
+	}
+
 	public function create( $data = array() ){
 		$id		= time( TRUE );
 		$data	= array_merge( $data, array(
@@ -34,8 +38,23 @@ class Resource_Model_File_JSON{
 		$this->save();
 	}
 
-	public function index(){
-		return $this->items;
+	public function flush(){
+		$this->items	= array();
+		$this->save();
+	}
+
+	public function index( $limit = NULL, $page = 1 ){
+		$data	= $this->items;
+		$total	= count( $this->items );
+		$page	= max( $page, 1 );
+		if( $limit ){
+			$lastPage	= ceil( $total / $limit );
+			if( $page && $page > $lastPage )
+				throw new \RangeException( "Invalid page number" );
+			if( $limit < $total )
+				$data	= array_slice( $data, ( $page - 1 ) * $limit, $limit, TRUE );
+		}
+		return $data;
 	}
 
 	public function read( $id ){
@@ -69,4 +88,3 @@ class Resource_Model_File_JSON{
 		\FS_File_Writer::save( $this->fileName, $json );
 	}
 }
-
