@@ -83,7 +83,7 @@ class Client{
 		return $this->handleRequest();
 	}
 
-	public function put( $path ){
+	public function put( $path, $data = array() ){
 		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'PUT' );
 		curl_setopt( $this->handler, CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
 		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
