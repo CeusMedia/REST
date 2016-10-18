@@ -77,7 +77,7 @@ class Demo{
 
 		$body	= '
 <div class="container">
-	<h1><span class="muted">Ceus Media</span> REST Client Demo</h2>
+	<h1><span class="muted">Ceus Media REST</span> PHP Browser Client Demo</h2>
 	<div class="row-fluid">
 		<div class="span3">
 			<h3>Entities</h3>
@@ -88,8 +88,6 @@ class Demo{
 		</div>
 	</div>
 </div>';
-
-
 
 		$page	= new UI_HTML_PageFrame();
 		$page->setBaseHref( 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'SCRIPT_NAME' ) ).'/' );
