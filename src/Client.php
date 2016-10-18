@@ -42,6 +42,8 @@ class Client{
 	protected $baseUri;
 	protected $expectedFormat	= "HTML";
 	protected $options			= array();
+	protected $requestHeader;
+	protected $responseHeader;
 
 	public function __construct( $baseUri, $options = array() ){
 		if( !extension_loaded( 'curl' ) )
@@ -49,7 +51,16 @@ class Client{
 		$this->options	= array_merge( array(), $options );
 		$this->baseUri	= $baseUri;
 		$this->handler	= curl_init();
+
+		$callbackHeaderFunction	= array( $this, 'callbackHeaderFunction' );
+		curl_setopt( $this->handler, CURLOPT_HEADER, FALSE );
 		curl_setopt( $this->handler, CURLOPT_RETURNTRANSFER, TRUE );
+		curl_setopt( $this->handler, CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
+	}
+
+	protected function callbackHeaderFunction( $handler, $header ){
+		$this->responseHeader	.= $header;
+		return strlen( $header );
 	}
 
 	protected function buildPostFields( $data ){
@@ -97,6 +108,8 @@ class Client{
 	}
 
 	protected function handleRequest(){
+		$this->requestHeader	= '';
+		$this->responseHeader	= '';
 		$headers	= array();
 		switch( $this->expectedFormat ){
 			case 'HTML':
@@ -110,27 +123,28 @@ class Client{
 				break;
 		}
 
-		curl_setopt( $this->handler, CURLOPT_HEADER, TRUE );
+//		curl_setopt( $this->handler, CURLINFO_HEADER_OUT, TRUE );
 		curl_setopt( $this->handler, CURLOPT_HTTPHEADER, $headers );
 
-		$result		= curl_exec( $this->handler );
+		$body		= curl_exec( $this->handler );
+		$error		= curl_errno( $this->handler );
+		if( $error )
+			throw new Client\RequestException( curl_error( $this->handler ), $error );
+
 		$info		= curl_getinfo( $this->handler );
-		$header		= mb_substr( $result, 0, $info['header_size'] );
-		$body		= mb_substr( $result, $info['header_size'] );
-//		xmp( $header );die;
-		$headers	= \Net_HTTP_Header_Parser::parse( $header );
+		if( $info['http_code'] >= 400 )
+			throw new Client\ResponseException( $body, $info['http_code'] );
+
+//		$this->requestHeader	= curl_getinfo( $this->handler, CURLINFO_HEADER_OUT );
+
+		$responseHeaderFields	= \Net_HTTP_Header_Parser::parse( $this->responseHeader );
 
 		$links		= array();
-		foreach( $headers->getFieldsByName( 'Link' ) as $link ){
+		foreach( $responseHeaderFields->getFieldsByName( 'Link' ) as $link ){
 			$value	= $link->getValue();
-/*			if( preg_match( "/;rel=[^;])/", $value ) ){
-}*/
-
+/*			if( preg_match( "/;rel=[^;])/", $value ) ){}*/
 			$links[]	= $value;
 		}
-
-		if( $info['http_code'] >= 400 )
-			throw new \RuntimeException( $body, $info['http_code'] );
 
 		switch( $this->expectedFormat ){
 			case 'HTML':
@@ -145,7 +159,7 @@ class Client{
 			case 'PHP':
 				$body	= array(
 					'data'	=> unserialize( $body ),
-					'links'		=> $links,
+					'links'	=> $links,
 				);
 				break;
 		}
