@@ -146,7 +146,11 @@ class Server{
 			\Net_HTTP_Response_Sender::sendResponse( $this->response );
 		}
 		catch( \Exception $e ){
-			$content	= $this->handleException( $e );
+			$text	= $this->handleException( $e ).'.';
+			$content	= '<h1>'.$this->response->getStatus().'</h1>'.$text;
+			$this->response->setBody( $content );
+			$this->response->addHeaderPair( 'Content-Type', 'text/html' );
+			\Net_HTTP_Response_Sender::sendResponse( $this->response );
 		}
 	}
 
