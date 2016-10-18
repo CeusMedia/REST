@@ -37,6 +37,9 @@ namespace CeusMedia\REST\Server;
  */
 class Controller{
 
+	/**
+	 *	@see   		https://dzone.com/articles/rest-pagination-spring
+	 */
 	protected function decoratePagination( $total, $limit, $page, $parameters = array() ){
 		$path	= $this->resources->request->getPath();
 		if( $limit && $limit < $total ){
