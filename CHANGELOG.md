@@ -2,6 +2,8 @@
 # Changelog of CeusMedia/REST
 
 ## Version 0.2
+- Document link for server controller pagination discovery support.
+- Set DocCreator documents path to project root.
 - Add this changelog.
 - Update PHP client demos README.
 - Updated HTML header of PHP Browser client demo.
