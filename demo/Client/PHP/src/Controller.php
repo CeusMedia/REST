@@ -1,6 +1,10 @@
 <?php
 abstract class Controller{
 
+	protected $baseUri;
+	protected $client;
+	protected $request;
+
 	public function __construct( $client, $request ){
 		$this->client	= $client;
 		$this->request	= $request;
