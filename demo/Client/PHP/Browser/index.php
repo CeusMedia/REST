@@ -8,4 +8,3 @@ error_reporting( E_ALL );
 new UI_DevOutput;
 
 new Demo();
-
