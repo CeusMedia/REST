@@ -15,11 +15,11 @@
     "email": "office@ceusmedia.de",
     "jabber": "ceus-media@jabber.org"
   },
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "require": {
     "php": ">=5.3.0",
-    "ceus-media/common": "^0.8.2",
-    "ceus-media/router": "^0.1",
+    "ceus-media/common": "*",
+    "ceus-media/router": "*",
     "ceus-media/cache": "dev-master"
   },
   "require-dev": {
