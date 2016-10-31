@@ -93,7 +93,8 @@ class Demo{
 		$page->setBaseHref( 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'SCRIPT_NAME' ) ).'/' );
 		$page->addStylesheet( 'https://cdn.ceusmedia.de/css/bootstrap.min.css' );
 		$page->addStylesheet( 'https://cdn.ceusmedia.de/fonts/FontAwesome/font-awesome.min.css' );
-		$page->addJavaScript( 'https://cdn.ceusmedia.de/js/jquery/1.10.2.min.js' );
+		$page->addJavaScript( 'https://cdn.ceusmedia.de/js/jquery/1.11.1.min.js' );
+//		$page->addJavaScript( 'https://cdn.ceusmedia.de/js/jquery/1.11.1.min.map' );
 		$page->addJavaScript( 'https://cdn.ceusmedia.de/js/bootstrap.min.js' );
 		$page->addBody( $body );
 		return $page->build();
