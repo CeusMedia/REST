@@ -18,7 +18,7 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *	@category		Library
- *	@package		CeusMedia_REST
+ *	@package		CeusMedia_REST_Server
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
  *	@copyright		2007-2016 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
@@ -29,7 +29,7 @@ namespace CeusMedia\REST\Server;
  *	...
  *
  *	@category		Library
- *	@package		CeusMedia_REST
+ *	@package		CeusMedia_REST_Server
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
  *	@copyright		2007-2016 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3

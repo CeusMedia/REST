@@ -49,24 +49,23 @@ class Server{
 		),
 	);
 	protected $formats		= array();
-	protected $resources	= array();
+	protected $context;
+	protected $buffer;
+	protected $request;
+	protected $response;
+	protected $router;
 
 	public function __construct( $options = array() ){
 		$this->options	= (object) array_merge( $this->defaultOptions, $options );
-		$this->request	= new \Net_HTTP_Request_Receiver();
-		$this->response	= new \Net_HTTP_Response();
-		$this->router	= new \CeusMedia\Router\Router();
-		$this->buffer	= new \UI_OutputBuffer();
 
-		$this->resources	= array(
-			'server'		=> $this,
-			'router'		=> $this->router,
-			'request'		=> $this->request,
-			'response'		=> $this->response,
-		);
+		$this->context	= new \CeusMedia\REST\Server\Context();
+		$this->context->request		= new \Net_HTTP_Request_Receiver();
+		$this->context->response	= new \Net_HTTP_Response();
+		$this->context->router		= new \CeusMedia\Router\Router();
+		$this->context->buffer		= new \UI_OutputBuffer();
 
 		if( $this->options->routesFile )
-			$this->router->loadRoutesFromJsonFile( $this->options->routesFile );
+			$this->context->router->loadRoutesFromJsonFile( $this->options->routesFile );
 
 		foreach( $this->options->formats as $format => $active ){
 			if( $active ){
@@ -81,34 +80,34 @@ class Server{
 	}
 
 	public function getRouter(){
-		return $this->router;
+		return $this->context->router;
 	}
 
 	public function getRequest(){
-		return $this->request;
+		return $this->context->request;
 	}
 
 	public function getResponse(){
-		return $this->response;
+		return $this->context->response;
 	}
 
-	public function getResources(){
-		return $this->resources;
+	public function getContext(){
+		return $this->context;
 	}
 
 	protected function handleException( $e ){
 		if( $e instanceof ResolverException ){
-			$this->response->setStatus( 404 );
+			$this->context->response->setStatus( 404 );
 			$result		= 'No content found for this route.';
 		}
 		else if( $e instanceof \OutOfRangeException ){
-			$this->response->setStatus( 404 );
+			$this->context->response->setStatus( 404 );
 		}
 		else{
-			if( (int) $this->response->getStatus() < 400 ){
-				$this->response->setStatus( 500 );
+			if( (int) $this->context->response->getStatus() < 400 ){
+				$this->context->response->setStatus( 500 );
 				if( count( $e->getCode() ) === 3 )
-					$this->response->setStatus( $e->getCode() );
+					$this->context->response->setStatus( $e->getCode() );
 			}
 		}
 		return $e->getMessage();
@@ -119,9 +118,9 @@ class Server{
 		if( !$error )
 			return;
 		$this->buffer->close();
-		$this->response->setStatus( 500 );
-		$this->response->setBody( $error['message'] );
-		\Net_HTTP_Response_Sender::sendResponse( $this->response );
+		$this->context->response->setStatus( 500 );
+		$this->context->response->setBody( $error['message'] );
+		\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		exit;
 	}
 
@@ -129,8 +128,8 @@ class Server{
 	 *	@todo		abstract logging - use logger interface
 	 */
 	public function handleRequest(){
-		$path	= $this->request->getPath();
-		$method	= $this->request->getMethod();
+		$path	= $this->context->request->getPath();
+		$method	= $this->context->request->getMethod();
 
 		if( strpos( $path, '?' ) !== FALSE )
 			$path	= substr( $path, 0, strpos( $path, '?' ) );
@@ -138,25 +137,25 @@ class Server{
 			$path	= substr( $path, 0, strrpos( $path, '.' ) );
 
 		try{
-			$route		= $this->router->resolve( $path, $method );
+			$route		= $this->context->router->resolve( $path, $method );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat( $result );
-			$content	= $format->transform( $this->response, $result );
-			$this->response->setBody( $content );
-			\Net_HTTP_Response_Sender::sendResponse( $this->response );
+			$content	= $format->transform( $this->context->response, $result );
+			$this->context->response->setBody( $content );
+			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		}
 		catch( \Exception $e ){
 			$text	= $this->handleException( $e ).'.';
-			$content	= '<h1>'.$this->response->getStatus().'</h1>'.$text;
-			$this->response->setBody( $content );
-			$this->response->addHeaderPair( 'Content-Type', 'text/html' );
-			\Net_HTTP_Response_Sender::sendResponse( $this->response );
+			$content	= '<h1>'.$this->context->response->getStatus().'</h1>'.$text;
+			$this->context->response->setBody( $content );
+			$this->context->response->addHeaderPair( 'Content-Type', 'text/html' );
+			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		}
 	}
 
 	protected function negotiateResponseFormat( $content ){
-		$path		= $this->request->getPath();
-		$accepts	= $this->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
+		$path		= $this->context->request->getPath();
+		$accepts	= $this->context->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
 		if( $this->options->forceMimeType )
 			$accepts	= array( $this->options->forceMimeType => 1 );
 
@@ -176,15 +175,15 @@ class Server{
 //		error_log( json_encode( $route )."\n", 3, "routes.log" );
 		if( !class_exists( $route->getController() ) )
 			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
-		$object		= \Alg_Object_Factory::createObject( $route->getController(), $this->resources );
+		$object		= \Alg_Object_Factory::createObject( $route->getController(), array( $this->context ) );
 		$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->getAction(), (array) $route->getArguments() );
-		if( $this->buffer->has() ){
-			throw new \RuntimeException( $this->buffer->get( TRUE ), 500 );
+		if( $this->context->buffer->has() ){
+			throw new \RuntimeException( $this->context->buffer->get( TRUE ), 500 );
 		}
 		return $result;
 	}
 
 	public function setResource( $key, $object ){
-		$this->resources[$key]	= $object;
+		$this->context->set( $key, $object );
 	}
 };
