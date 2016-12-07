@@ -2,27 +2,27 @@
   {
     "controller": "Controller_Index",
     "action": "handle",
-    "pattern": "",
+    "pattern": "/",
     "method": "GET"
   },{
     "controller": "Controller_Test_Index",
     "action": "handle",
-    "pattern": "Test",
+    "pattern": "/Test",
     "method": "GET"
   },{
     "controller": "Controller_Test_Add",
     "action": "handle",
-    "pattern": "Test/add",
+    "pattern": "/Test/add",
     "method": "GET,POST"
   },{
     "controller": "Controller_Test_Edit",
     "action": "handle",
-    "pattern": "Test/:id/edit",
+    "pattern": "/Test/:id/edit",
     "method": "GET,POST"
   },{
     "controller": "Controller_Test_Remove",
     "action": "handle",
-    "pattern": "Test/:id/remove",
+    "pattern": "/Test/:id/remove",
     "method": "GET,POST"
   }
 ]

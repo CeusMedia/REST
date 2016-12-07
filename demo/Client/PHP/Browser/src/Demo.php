@@ -67,7 +67,7 @@ class Demo{
 						$attributes['class']	= 'active';
 					$list[]	= UI_HTML_Tag::create( 'li', array(
 						UI_HTML_Tag::create( 'a', str_replace( "/", " ", $topic ), array(
-							'href'	=> $indexRoutes[0]->getPattern(),
+							'href'	=> substr( $indexRoutes[0]->getPattern(), 1 ),
 						) )
 					), $attributes );
 				}
