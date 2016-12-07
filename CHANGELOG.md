@@ -1,6 +1,9 @@
 
 # Changelog of CeusMedia/REST
 
+## Version 0.3
+- Add server context as resource pool.
+
 ## Version 0.2
 - Document link for server controller pagination discovery support.
 - Set DocCreator documents path to project root.
