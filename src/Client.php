@@ -42,9 +42,16 @@ class Client{
 	protected $baseUri;
 	protected $expectedFormat	= "HTML";
 	protected $options			= array();
-	protected $requestHeader;
+	protected $requestHeaders	= array();
 	protected $responseHeader;
 
+	/**
+	 *	Constructor.
+	 *	@access		public
+	 *	@param		string		$baseUri		REST server base URL
+	 *	@param		array		$options		Map of connection options
+	 *	@return		void
+	 */
 	public function __construct( $baseUri, $options = array() ){
 		if( !extension_loaded( 'curl' ) )
 			throw new \RuntimeException( "Support for cURL is missing" );
@@ -79,6 +86,13 @@ class Client{
 		$this->expectedFormat	= $format;
 	}
 
+	/**
+	 *	Read resource from server.
+	 *	@access		public
+	 *	@param		string		$path			Resource path to request
+	 *	@param		array		$parameters		Map of GET parameters
+	 *	@return		mixed
+	 */
 	public function get( $path, $parameters = array() ){
 		if( $parameters )
 			$path	.= "?".$this->buildPostFields( $parameters );
@@ -87,6 +101,13 @@ class Client{
 		return $this->handleRequest();
 	}
 
+	/**
+	 *	Create resource on server.
+	 *	@access		public
+	 *	@param		string		$path			Resource path to request
+	 *	@param		array		$parameters		Map of POST parameters
+	 *	@return		mixed
+	 */
 	public function post( $path, $data = array() ){
 		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'POST' );
 		curl_setopt( $this->handler, CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -94,6 +115,13 @@ class Client{
 		return $this->handleRequest();
 	}
 
+	/**
+	 *	Update resource on server.
+	 *	@access		public
+	 *	@param		string		$path			Resource path to request
+	 *	@param		array		$parameters		Map of PUT parameters
+	 *	@return		mixed
+	 */
 	public function put( $path, $data = array() ){
 		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'PUT' );
 		curl_setopt( $this->handler, CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -101,6 +129,12 @@ class Client{
 		return $this->handleRequest();
 	}
 
+	/**
+	 *	Remove resource on server.
+	 *	@access		public
+	 *	@param		string		$path			Resource path to request
+	 *	@return		mixed
+	 */
 	public function delete( $path ){
 		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'DELETE' );
 		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
@@ -108,9 +142,8 @@ class Client{
 	}
 
 	protected function handleRequest(){
-		$this->requestHeader	= '';
 		$this->responseHeader	= '';
-		$headers	= array();
+		$headers	= $this->requestHeaders;
 		switch( $this->expectedFormat ){
 			case 'HTML':
 				$headers[]	= 'Accept: text/html;q=1';
@@ -166,7 +199,16 @@ class Client{
 		return $body;
 	}
 
+	/**
+	 *	Set credentials for HTTP Basic Authentication.
+	 *	@access		public
+	 *	@param		string		$username	HTTP Basic Auth username
+	 *	@param		string		$password	HTTP Basic Auth password
+	 *	@return		void
+	 */
 	public function setBasicAuth( $username, $password ){
+		$encoded	= base64_encode( $username, $password );
+		$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
 		curl_setopt( $this->handler, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
 		curl_setopt( $this->handler, CURLOPT_USERPWD, $this->username . ':' . $this->password );
 	}
