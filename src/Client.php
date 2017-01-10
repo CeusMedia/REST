@@ -207,7 +207,7 @@ class Client{
 	 *	@return		void
 	 */
 	public function setBasicAuth( $username, $password ){
-		$encoded	= base64_encode( $username, $password );
+		$encoded	= base64_encode( $username . ':' . $password );
 		$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
 		curl_setopt( $this->handler, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
 		curl_setopt( $this->handler, CURLOPT_USERPWD, $this->username . ':' . $this->password );
