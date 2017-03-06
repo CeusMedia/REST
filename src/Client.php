@@ -55,7 +55,7 @@ class Client{
 	public function __construct( $baseUri, $options = array() ){
 		if( !extension_loaded( 'curl' ) )
 			throw new \RuntimeException( "Support for cURL is missing" );
-		$this->options	= array_merge( array(), $options );
+		$this->options	= array() + $options;
 		$this->baseUri	= $baseUri;
 		$this->handler	= curl_init();
 
@@ -64,7 +64,7 @@ class Client{
 		curl_setopt( $this->handler, CURLOPT_RETURNTRANSFER, TRUE );
 		curl_setopt( $this->handler, CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
 		foreach( $this->options as $key => $value ){
-			curl_setopt( $this->handler, $key, $value );
+			curl_setopt( $this->handler, (int) $key, $value );
 		}
 	}
 
