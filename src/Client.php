@@ -63,6 +63,9 @@ class Client{
 		curl_setopt( $this->handler, CURLOPT_HEADER, FALSE );
 		curl_setopt( $this->handler, CURLOPT_RETURNTRANSFER, TRUE );
 		curl_setopt( $this->handler, CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
+		foreach( $this->options as $key => $value ){
+			curl_setopt( $this->handler, $key, $value );
+		}
 	}
 
 	protected function callbackHeaderFunction( $handler, $header ){
