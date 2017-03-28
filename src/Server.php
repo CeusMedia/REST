@@ -41,6 +41,7 @@ class Server{
 	protected $defaultOptions	= array(
 		'forceMimeType'		=> NULL,
 		'routesFile'		=> NULL,
+		'routesFolder'		=> NULL,
 		'formats'			=> array(
 			'HTML'		=> TRUE,
 			'JSON'		=> TRUE,
@@ -64,8 +65,12 @@ class Server{
 		$this->context->router		= new \CeusMedia\Router\Router();
 		$this->context->buffer		= new \UI_OutputBuffer();
 
-		if( $this->options->routesFile )
-			$this->context->router->loadRoutesFromJsonFile( $this->options->routesFile );
+		if( $this->options->routesFile ){
+			$this->context->router->loadRoutesFromJsonFile(
+				$this->options->routesFile,
+				$this->options->routesFolder
+			);
+		}
 
 		foreach( $this->options->formats as $format => $active ){
 			if( $active ){
