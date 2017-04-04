@@ -55,6 +55,7 @@ class Server{
 	protected $request;
 	protected $response;
 	protected $router;
+	protected $accessChecks;
 
 	public function __construct( $options = array() ){
 		$this->options	= (object) array_merge( $this->defaultOptions, $options );
@@ -81,6 +82,7 @@ class Server{
 			}
 		}
 
+		set_error_handler( array( $this, "handleError" ) );
 		register_shutdown_function( array( $this, "handleFatalError" ) );
 	}
 
@@ -118,17 +120,50 @@ class Server{
 		return $e->getMessage();
 	}
 
+	public function handleError( $code, $message, $file, $line ){
+		$this->context->buffer->close();
+		$this->context->response->setStatus( 500 );
+		$this->context->response->setBody( '<h1>Internal Server Error</h1><p>Error: '.$message.' in '.$file.' at line '.$line );
+		\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
+		exit;
+	}
+
 	public function handleFatalError(){
 		$error	= error_get_last();
 		if( !$error )
 			return;
-		$this->buffer->close();
+		$this->context->buffer->close();
 		$this->context->response->setStatus( 500 );
 		$this->context->response->setBody( $error['message'] );
 		\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		exit;
 	}
 
+	public function registerAccessCheck( $className, $method ){
+		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
+	}
+
+	protected function checkAccess( $route ){
+		if( !$this->accessChecks )
+			return;
+		foreach( $this->accessChecks as $accessCheck ){
+			ob_start();
+			$error	= \Alg_Object_MethodFactory::callClassMethod(
+				$accessCheck->className,
+				$accessCheck->method,
+				array(),
+				array( $this->context->request, $route )
+			);
+			$buffer	= ob_get_clean();
+			if( $error ){
+				$this->context->buffer->close();
+				$this->context->response->setStatus( 401 );
+				$this->context->response->setBody( '<h1>401 Forbidden</h1><p>'.$error.'</p>'.$buffer );
+				\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
+				exit;
+			}
+		}
+	}
 	/**
 	 *	@todo		abstract logging - use logger interface
 	 */
@@ -143,6 +178,7 @@ class Server{
 
 		try{
 			$route		= $this->context->router->resolve( $path, $method );
+			$this->checkAccess( $route );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat( $result );
 			$content	= $format->transform( $this->context->response, $result );
