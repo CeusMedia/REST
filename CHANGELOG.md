@@ -2,9 +2,10 @@
 # Changelog of CeusMedia/REST
 
 ## Version 0.3
-- Add server context as resource pool.
-- Add register for external access checkers.
-- Add generell error handler.
+- 0.2.1: Add server context as resource pool.
+- 0.2.2: Add register for external access checkers.
+- 0.2.2: Add generell error handler.
+- 0.2.2: Support additional request headers in client.
 
 ## Version 0.2
 - Document link for server controller pagination discovery support.
