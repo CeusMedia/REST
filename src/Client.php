@@ -68,6 +68,10 @@ class Client{
 		}
 	}
 
+	public function addRequestHeader( $key, $value ){
+		$this->requestHeaders[]	= $key.": ".$value;
+	}
+
 	protected function callbackHeaderFunction( $handler, $header ){
 		$this->responseHeader	.= $header;
 		return strlen( $header );
@@ -147,6 +151,7 @@ class Client{
 	protected function handleRequest(){
 		$this->responseHeader	= '';
 		$headers	= $this->requestHeaders;
+
 		switch( $this->expectedFormat ){
 			case 'HTML':
 				$headers[]	= 'Accept: text/html;q=1';
@@ -170,7 +175,6 @@ class Client{
 		$info		= curl_getinfo( $this->handler );
 		if( $info['http_code'] >= 400 )
 			throw new Client\ResponseException( $body, $info['http_code'] );
-
 //		$this->requestHeader	= curl_getinfo( $this->handler, CURLINFO_HEADER_OUT );
 
 		$responseHeaderFields	= \Net_HTTP_Header_Parser::parse( $this->responseHeader );
