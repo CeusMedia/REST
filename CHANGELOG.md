@@ -3,6 +3,8 @@
 
 ## Version 0.3
 - Add server context as resource pool.
+- Add register for external access checkers.
+- Add generell error handler.
 
 ## Version 0.2
 - Document link for server controller pagination discovery support.
