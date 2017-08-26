@@ -44,6 +44,9 @@ class Client{
 	protected $options			= array();
 	protected $requestHeaders	= array();
 	protected $responseHeader;
+	protected $setCurlOptions	= array();
+	protected $logErrors;
+	protected $logRequests;
 
 	/**
 	 *	Constructor.
@@ -60,11 +63,11 @@ class Client{
 		$this->handler	= curl_init();
 
 		$callbackHeaderFunction	= array( $this, 'callbackHeaderFunction' );
-		curl_setopt( $this->handler, CURLOPT_HEADER, FALSE );
-		curl_setopt( $this->handler, CURLOPT_RETURNTRANSFER, TRUE );
-		curl_setopt( $this->handler, CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
+		$this->setCurlOption( CURLOPT_HEADER, FALSE );
+		$this->setCurlOption( CURLOPT_RETURNTRANSFER, TRUE );
+		$this->setCurlOption( CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
 		foreach( $this->options as $key => $value ){
-			curl_setopt( $this->handler, (int) $key, $value );
+			$this->setCurlOption( (int) $key, $value );
 		}
 	}
 
@@ -103,9 +106,35 @@ class Client{
 	public function get( $path, $parameters = array() ){
 		if( $parameters )
 			$path	.= "?".$this->buildPostFields( $parameters );
-		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'GET' );
-		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
+		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'GET' );
+		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
+	}
+
+	/**
+	 *	Returns option on CURL handler, if set.
+	 *	@access		protected
+	 *	@param		integer		$key		CURL option key (constant)
+	 *	@return		mixed|NULL
+	 */
+	protected function getCurlOption( $key ){
+		if( isset( $this->setCurlOptions[$key] ) )
+			return $this->setCurlOptions[$key];
+		return NULL;
+	}
+
+	protected function logRequest(){
+		if( !$this->logRequests )
+			return;
+		$info		= curl_getinfo( $this->handler );
+		$message	= sprintf(
+			'%s %s %d %s',
+			date( 'Y-m-d H:i:s' ),
+			$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
+			$info['http_code'],
+			$this->getCurlOption( CURLOPT_URL )
+		);
+		error_log( $message.PHP_EOL, 3, $this->logRequests );
 	}
 
 	/**
@@ -116,9 +145,9 @@ class Client{
 	 *	@return		mixed
 	 */
 	public function post( $path, $data = array() ){
-		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'POST' );
-		curl_setopt( $this->handler, CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
-		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
+		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'POST' );
+		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
+		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
 	}
 
@@ -130,9 +159,9 @@ class Client{
 	 *	@return		mixed
 	 */
 	public function put( $path, $data = array() ){
-		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'PUT' );
-		curl_setopt( $this->handler, CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
-		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
+		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'PUT' );
+		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
+		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
 	}
 
@@ -143,8 +172,8 @@ class Client{
 	 *	@return		mixed
 	 */
 	public function delete( $path ){
-		curl_setopt( $this->handler, CURLOPT_CUSTOMREQUEST, 'DELETE' );
-		curl_setopt( $this->handler, CURLOPT_URL, $this->baseUri.$path );
+		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'DELETE' );
+		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
 	}
 
@@ -164,15 +193,17 @@ class Client{
 				break;
 		}
 
-//		curl_setopt( $this->handler, CURLINFO_HEADER_OUT, TRUE );
-		curl_setopt( $this->handler, CURLOPT_HTTPHEADER, $headers );
+//		$this->setCurlOption( CURLINFO_HEADER_OUT, TRUE );
+		$this->setCurlOption( CURLOPT_HTTPHEADER, $headers );
 
 		$body		= curl_exec( $this->handler );
 		$error		= curl_errno( $this->handler );
+		$info		= curl_getinfo( $this->handler );
+		$this->logRequest();
+
 		if( $error )
 			throw new Client\RequestException( curl_error( $this->handler ), $error );
 
-		$info		= curl_getinfo( $this->handler );
 		if( $info['http_code'] >= 400 )
 			throw new Client\ResponseException( $body, $info['http_code'] );
 //		$this->requestHeader	= curl_getinfo( $this->handler, CURLINFO_HEADER_OUT );
@@ -214,9 +245,36 @@ class Client{
 	 *	@return		void
 	 */
 	public function setBasicAuth( $username, $password ){
+		if( !strlen( trim( $username ) ) )
+			return;
 		$encoded	= base64_encode( $username . ':' . $password );
 		$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
-		curl_setopt( $this->handler, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
-		curl_setopt( $this->handler, CURLOPT_USERPWD, $username . ':' . $password );
+		$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
+		$this->setCurlOption( CURLOPT_USERPWD, $username . ':' . $password );
+	}
+
+	/**
+	 *	Sets option on CURL handler. Wrapper for curl_setopt.
+	 *	Will note set options to be able to get set options later.
+	 *	@access		protected
+	 *	@param		integer		$key		CURL option key (constant)
+	 *	@param		mixed		$value		Value of CURL option to set
+	 *	@return		void
+	 */
+	protected function setCurlOption( $key, $value ){
+		$this->setCurlOptions[$key]	= $value;
+		curl_setopt( $this->handler, $key, $value );
+	}
+
+	public function setLogErrors( $filePath ){
+		if( !file_exists( dirname( $filePath ) ) )
+			\FS_Folder_Editor::createFolder( $filePath );
+		$this->logErrors	= $filePath;
+	}
+
+	public function setLogRequests( $filePath ){
+		if( !file_exists( dirname( $filePath ) ) )
+			\FS_Folder_Editor::createFolder( $filePath );
+		$this->logRequests	= $filePath;
 	}
 }
