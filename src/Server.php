@@ -86,6 +86,29 @@ class Server{
 		register_shutdown_function( array( $this, "handleFatalError" ) );
 	}
 
+	protected function checkAccess( $route ){
+		if( !$this->accessChecks )
+			return;
+		foreach( $this->accessChecks as $accessCheck ){
+			ob_start();
+			$error	= \Alg_Object_MethodFactory::callClassMethod(
+				$accessCheck->className,
+				$accessCheck->method,
+				array(),
+				array( $this->context->request, $route )
+			);
+			$buffer	= ob_get_clean();
+			if( $error ){
+				$this->log( 401 );
+				$this->context->buffer->close();
+				$this->context->response->setStatus( 401 );
+				$this->context->response->setBody( '<h1>401 Forbidden</h1><p>'.$error.'</p>'.$buffer );
+				\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
+				exit;
+			}
+		}
+	}
+
 	public function getRouter(){
 		return $this->context->router;
 	}
@@ -121,6 +144,7 @@ class Server{
 	}
 
 	public function handleError( $code, $message, $file, $line ){
+		$this->log( 500 );
 		$this->context->buffer->close();
 		$this->context->response->setStatus( 500 );
 		$this->context->response->setBody( '<h1>Internal Server Error</h1><p>Error: '.$message.' in '.$file.' at line '.$line );
@@ -132,6 +156,7 @@ class Server{
 		$error	= error_get_last();
 		if( !$error )
 			return;
+		$this->log( 500 );
 		$this->context->buffer->close();
 		$this->context->response->setStatus( 500 );
 		$this->context->response->setBody( $error['message'] );
@@ -139,31 +164,6 @@ class Server{
 		exit;
 	}
 
-	public function registerAccessCheck( $className, $method ){
-		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
-	}
-
-	protected function checkAccess( $route ){
-		if( !$this->accessChecks )
-			return;
-		foreach( $this->accessChecks as $accessCheck ){
-			ob_start();
-			$error	= \Alg_Object_MethodFactory::callClassMethod(
-				$accessCheck->className,
-				$accessCheck->method,
-				array(),
-				array( $this->context->request, $route )
-			);
-			$buffer	= ob_get_clean();
-			if( $error ){
-				$this->context->buffer->close();
-				$this->context->response->setStatus( 401 );
-				$this->context->response->setBody( '<h1>401 Forbidden</h1><p>'.$error.'</p>'.$buffer );
-				\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
-				exit;
-			}
-		}
-	}
 	/**
 	 *	@todo		abstract logging - use logger interface
 	 */
@@ -175,23 +175,35 @@ class Server{
 			$path	= substr( $path, 0, strpos( $path, '?' ) );
 		if( preg_match( '/\.\w+$/', $path ) )
 			$path	= substr( $path, 0, strrpos( $path, '.' ) );
-
 		try{
 			$route		= $this->context->router->resolve( $path, $method );
 			$this->checkAccess( $route );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat( $result );
 			$content	= $format->transform( $this->context->response, $result );
+			$this->log( 200 );
 			$this->context->response->setBody( $content );
 			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		}
 		catch( \Exception $e ){
+			$this->log( 500 );
 			$text	= $this->handleException( $e ).'.';
 			$content	= '<h1>'.$this->context->response->getStatus().'</h1>'.$text;
 			$this->context->response->setBody( $content );
 			$this->context->response->addHeaderPair( 'Content-Type', 'text/html' );
 			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
 		}
+	}
+
+	protected function log( $status ){
+		$log	= array(
+			'date'		=> date( 'r' ),
+			'ip'		=> getEnv( 'REMOTE_ADDR' ),
+			'method'	=> $this->context->request->getMethod(),
+			'path'		=> $this->context->request->getPath(),
+			'referer'	=> getEnv( 'HTTP_REFERER' )
+		);
+//		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
 
 	protected function negotiateResponseFormat( $content ){
@@ -213,15 +225,23 @@ class Server{
 	}
 
 	protected function realizeResolvedRoute( \CeusMedia\Router\Route $route ){
-//		error_log( json_encode( $route )."\n", 3, "routes.log" );
 		if( !class_exists( $route->getController() ) )
 			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
 		$object		= \Alg_Object_Factory::createObject( $route->getController(), array( $this->context ) );
+
+//  @todo handle exception in method calls
+//try{
 		$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->getAction(), (array) $route->getArguments() );
 		if( $this->context->buffer->has() ){
 			throw new \RuntimeException( $this->context->buffer->get( TRUE ), 500 );
 		}
+//}
+//catch( Exception $e ){}
 		return $result;
+	}
+
+	public function registerAccessCheck( $className, $method ){
+		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
 	}
 
 	public function setResource( $key, $object ){
