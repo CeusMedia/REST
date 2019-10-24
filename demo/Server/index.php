@@ -8,8 +8,10 @@ error_reporting( E_ALL );
 new UI_DevOutput;
 
 $options	= array(
-//    'forceMimeType' => 'application/json',
-	'routesFile'	=> 'routes.json',
+	'forceMimeType' => 'application/json',
+//	'routesFile'	=> 'routes.json',
 );
-$server = new Server( $options );
+
+$server	= new Server( $options );
+$server->addRouterRegistrySource( new \CeusMedia\Router\Registry\Source\JsonFile( 'routes.json' ) );
 $server->handleRequest();

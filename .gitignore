@@ -1,6 +1,6 @@
-vendor
-composer.lock
-doc/API
-doc/Test
-demo/Server/data/*
-demo/Server/*.log
+/vendor
+/composer.lock
+/doc/API
+/doc/Test
+#demo/Server/data/*
+/demo/Server/*.log
