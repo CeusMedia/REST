@@ -2,7 +2,7 @@
 /**
  *	...
  *
- *	Copyright (c) 2007-2016 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2019 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,30 +20,32 @@
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\Format;
+
 /**
  *	...
  *
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class JSON{
-
+class JSON implements FormatInterface
+{
 	public $contentType	= 'application/json';
 
 	public $extension	= '.json';
 
 	public $mimeTypes	= array( 'application/json' );
 
-	public function transform( $response, $content ){
+	public function transform( $response, $content )
+	{
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return json_encode( $content, JSON_PRETTY_PRINT );
 	}

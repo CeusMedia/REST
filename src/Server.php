@@ -2,7 +2,7 @@
 /**
  *	...
  *
- *	Copyright (c) 2007-2016 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2019 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,23 +20,31 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST;
+
+use CeusMedia\Router\Router as Router;
+use CeusMedia\Router\Registry\Source\SourceInterface as RouterRegistrySourceInterface;
+use CeusMedia\Router\Registry\Source\JsonFile as RouterRegistrySourceJsonFile;
+use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolder;
+use Net_HTTP_Request_Receiver as RequestReceiver;
+use Net_HTTP_Response_Sender as ResponseSender;
+
 /**
  *	...
  *
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class Server{
-
+class Server
+{
 	protected $options;
 	protected $defaultOptions	= array(
 		'forceMimeType'		=> NULL,
@@ -55,22 +63,28 @@ class Server{
 	protected $request;
 	protected $response;
 	protected $router;
+
 	protected $accessChecks;
 
-	public function __construct( $options = array() ){
+	public function __construct( $options = array() )
+	{
 		$this->options	= (object) array_merge( $this->defaultOptions, $options );
 
-		$this->context	= new \CeusMedia\REST\Server\Context();
-		$this->context->request		= new \Net_HTTP_Request_Receiver();
+		$this->context				= new Server\Context();
+		$this->context->request		= new RequestReceiver();
 		$this->context->response	= new \Net_HTTP_Response();
-		$this->context->router		= new \CeusMedia\Router\Router();
+		$this->context->router		= new Router();
 		$this->context->buffer		= new \UI_OutputBuffer();
 
-		if( $this->options->routesFile ){
-			$this->context->router->loadRoutesFromJsonFile(
-				$this->options->routesFile,
-				$this->options->routesFolder
-			);
+
+		if( !empty( $this->options->routesFile ) ){
+			$source	= new RouterRegistrySourceJsonFile( $this->options->routesFile );
+			$this->getRouter()->getRegistry()->addSource( $source );
+		}
+
+		if( !empty( $this->options->routesFolder ) ){
+			$source	= new RouterRegistrySourceJsonFolder( $this->options->routesFolder );
+			$this->getRouter()->getRegistry()->addSource( $source );
 		}
 
 		foreach( $this->options->formats as $format => $active ){
@@ -86,7 +100,119 @@ class Server{
 		register_shutdown_function( array( $this, "handleFatalError" ) );
 	}
 
-	protected function checkAccess( $route ){
+	public function addRouterRegistrySource( RouterRegistrySourceInterface $source )
+	{
+		$this->getRouter()->getRegistry()->addSource( $source );
+	}
+
+	public function getRouter()
+	{
+		return $this->context->router;
+	}
+
+	public function getRequest()
+	{
+		return $this->context->request;
+	}
+
+	public function getResponse()
+	{
+		return $this->context->response;
+	}
+
+	public function getContext()
+	{
+		return $this->context;
+	}
+
+	protected function handleException( $e )
+	{
+		if( $e instanceof ResolverException ){
+			$this->context->response->setStatus( 404 );
+			$result		= 'No content found for this route.';
+		}
+		else if( $e instanceof \OutOfRangeException ){
+			$this->context->response->setStatus( 404 );
+		}
+		else{
+			if( (int) $this->context->response->getStatus() < 400 ){
+				$this->context->response->setStatus( 500 );
+				if( strlen( $e->getCode() ) === 3 )
+					$this->context->response->setStatus( $e->getCode() );
+			}
+		}
+		return $e->getMessage();
+	}
+
+	public function handleError( $code, $message, $file, $line )
+	{
+		$this->log( 500 );
+		$this->context->buffer->close();
+		$this->context->response->setStatus( 500 );
+		$this->context->response->setBody( '<h1>Internal Server Error</h1><p>Error: '.$message.' in '.$file.' at line '.$line );
+		ResponseSender::sendResponse( $this->context->response );
+		exit;
+	}
+
+	public function handleFatalError()
+	{
+		$error	= error_get_last();
+		if( !$error )
+			return;
+		$this->log( 500 );
+		$this->context->buffer->close();
+		$this->context->response->setStatus( 500 );
+		$this->context->response->setBody( $error['message'] );
+		ResponseSender::sendResponse( $this->context->response );
+		exit;
+	}
+
+	/**
+	 *	@todo		abstract logging - use logger interface
+	 */
+	public function handleRequest()
+	{
+		$path	= $this->context->request->getPath();
+		$method	= $this->context->request->getMethod();
+
+		if( strpos( $path, '?' ) !== FALSE )
+			$path	= substr( $path, 0, strpos( $path, '?' ) );
+		if( preg_match( '/\.\w+$/', $path ) )
+			$path	= substr( $path, 0, strrpos( $path, '.' ) );
+		try{
+			$route		= $this->context->router->resolve( $path, $method );
+			$this->checkAccess( $route );
+			$result		= $this->realizeResolvedRoute( $route );
+			$format		= $this->negotiateResponseFormat( $result );
+			$content	= $format->transform( $this->context->response, $result );
+			$this->log( 200 );
+			$this->context->response->setBody( $content );
+			ResponseSender::sendResponse( $this->context->response );
+		}
+		catch( \Exception $e ){
+			$this->log( 500 );
+			$text	= $this->handleException( $e ).'.';
+			$content	= '<h1>'.$this->context->response->getStatus().'</h1>'.$text;
+			$this->context->response->setBody( $content );
+			$this->context->response->addHeaderPair( 'Content-Type', 'text/html' );
+			ResponseSender::sendResponse( $this->context->response );
+		}
+	}
+
+	public function registerAccessCheck( $className, $method )
+	{
+		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
+	}
+
+	public function setResource( $key, $object )
+	{
+		$this->context->set( $key, $object );
+	}
+
+	/*  --  PROTECTED  --  */
+
+	protected function checkAccess( $route )
+	{
 		if( !$this->accessChecks )
 			return;
 		foreach( $this->accessChecks as $accessCheck ){
@@ -103,99 +229,14 @@ class Server{
 				$this->context->buffer->close();
 				$this->context->response->setStatus( 401 );
 				$this->context->response->setBody( '<h1>401 Forbidden</h1><p>'.$error.'</p>'.$buffer );
-				\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
+				ResponseSender::sendResponse( $this->context->response );
 				exit;
 			}
 		}
 	}
 
-	public function getRouter(){
-		return $this->context->router;
-	}
-
-	public function getRequest(){
-		return $this->context->request;
-	}
-
-	public function getResponse(){
-		return $this->context->response;
-	}
-
-	public function getContext(){
-		return $this->context;
-	}
-
-	protected function handleException( $e ){
-		if( $e instanceof ResolverException ){
-			$this->context->response->setStatus( 404 );
-			$result		= 'No content found for this route.';
-		}
-		else if( $e instanceof \OutOfRangeException ){
-			$this->context->response->setStatus( 404 );
-		}
-		else{
-			if( (int) $this->context->response->getStatus() < 400 ){
-				$this->context->response->setStatus( 500 );
-				if( count( $e->getCode() ) === 3 )
-					$this->context->response->setStatus( $e->getCode() );
-			}
-		}
-		return $e->getMessage();
-	}
-
-	public function handleError( $code, $message, $file, $line ){
-		$this->log( 500 );
-		$this->context->buffer->close();
-		$this->context->response->setStatus( 500 );
-		$this->context->response->setBody( '<h1>Internal Server Error</h1><p>Error: '.$message.' in '.$file.' at line '.$line );
-		\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
-		exit;
-	}
-
-	public function handleFatalError(){
-		$error	= error_get_last();
-		if( !$error )
-			return;
-		$this->log( 500 );
-		$this->context->buffer->close();
-		$this->context->response->setStatus( 500 );
-		$this->context->response->setBody( $error['message'] );
-		\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
-		exit;
-	}
-
-	/**
-	 *	@todo		abstract logging - use logger interface
-	 */
-	public function handleRequest(){
-		$path	= $this->context->request->getPath();
-		$method	= $this->context->request->getMethod();
-
-		if( strpos( $path, '?' ) !== FALSE )
-			$path	= substr( $path, 0, strpos( $path, '?' ) );
-		if( preg_match( '/\.\w+$/', $path ) )
-			$path	= substr( $path, 0, strrpos( $path, '.' ) );
-		try{
-			$route		= $this->context->router->resolve( $path, $method );
-			$this->checkAccess( $route );
-			$result		= $this->realizeResolvedRoute( $route );
-			$format		= $this->negotiateResponseFormat( $result );
-			$content	= $format->transform( $this->context->response, $result );
-			$this->log( 200 );
-			$this->context->response->setBody( $content );
-			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
-		}
-		catch( \Exception $e ){
-			$this->log( 500 );
-			$text	= $this->handleException( $e ).'.';
-			$content	= '<h1>'.$this->context->response->getStatus().'</h1>'.$text;
-			$this->context->response->setBody( $content );
-			$this->context->response->addHeaderPair( 'Content-Type', 'text/html' );
-			\Net_HTTP_Response_Sender::sendResponse( $this->context->response );
-		}
-	}
-
-	protected function log( $status ){
+	protected function log( $status )
+	{
 		$log	= array(
 			'date'		=> date( 'r' ),
 			'ip'		=> getEnv( 'REMOTE_ADDR' ),
@@ -206,7 +247,8 @@ class Server{
 //		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
 
-	protected function negotiateResponseFormat( $content ){
+	protected function negotiateResponseFormat( $content )
+	{
 		$path		= $this->context->request->getPath();
 		$accepts	= $this->context->request->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
 		if( $this->options->forceMimeType )
@@ -224,7 +266,8 @@ class Server{
 		throw new \RuntimeException( 'Content type is not supported' );
 	}
 
-	protected function realizeResolvedRoute( \CeusMedia\Router\Route $route ){
+	protected function realizeResolvedRoute( \CeusMedia\Router\Route $route )
+	{
 		if( !class_exists( $route->getController() ) )
 			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
 		$object		= \Alg_Object_Factory::createObject( $route->getController(), array( $this->context ) );
@@ -238,13 +281,5 @@ class Server{
 //}
 //catch( Exception $e ){}
 		return $result;
-	}
-
-	public function registerAccessCheck( $className, $method ){
-		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
-	}
-
-	public function setResource( $key, $object ){
-		$this->context->set( $key, $object );
 	}
 };

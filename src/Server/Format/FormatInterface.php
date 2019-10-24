@@ -36,30 +36,7 @@ namespace CeusMedia\REST\Server\Format;
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class HTML implements FormatInterface
+interface FormatInterface
 {
-	public $contentType	= 'text/html';
-
-	public $extension	= '.html';
-
-	public $mimeTypes	= array( 'text/html' );
-
-	public function transform( $response, $content )
-	{
-		if( is_object( $content ) )
-			$content	= (string) $content;
-		if( is_array( $content ) )
-			$content	= $this->flattenArray( $content );
-		if( !is_string( $content ) )
-			throw new \RuntimeException( 'Content could not be transformed to string' );
-		$response->addHeaderPair( 'Content-Type', $this->contentType );
-		return $content;
-	}
-
-	protected function flattenArray( & $array ){
-		$list	= array();
-		foreach( $array as $item )
-			$list[]	= is_array( $item ) ? $this->flattenArray( $item ) : $item;
-		return join( $list );
-	}
+	public function transform( $response, $content );
 }

@@ -2,7 +2,7 @@
 /**
  *	...
  *
- *	Copyright (c) 2007-2016 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2019 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,23 +20,24 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST;
+
 /**
  *	...
  *
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2016 Christian Würker
+ *	@copyright		2007-2019 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class Client{
-
+class Client
+{
 	protected $username;
 	protected $password;
 	protected $baseUri;
@@ -55,7 +56,8 @@ class Client{
 	 *	@param		array		$options		Map of connection options
 	 *	@return		void
 	 */
-	public function __construct( $baseUri, $options = array() ){
+	public function __construct( $baseUri, $options = array() )
+	{
 		if( !extension_loaded( 'curl' ) )
 			throw new \RuntimeException( "Support for cURL is missing" );
 		$this->options	= array() + $options;
@@ -71,16 +73,19 @@ class Client{
 		}
 	}
 
-	public function addRequestHeader( $key, $value ){
+	public function addRequestHeader( $key, $value )
+	{
 		$this->requestHeaders[]	= $key.": ".$value;
 	}
 
-	protected function callbackHeaderFunction( $handler, $header ){
+	protected function callbackHeaderFunction( $handler, $header )
+	{
 		$this->responseHeader	.= $header;
 		return strlen( $header );
 	}
 
-	protected function buildPostFields( $data ){
+	protected function buildPostFields( $data )
+	{
 		if( is_object( $data ) ){
 			if( method_exists( $data, 'toArray' ) )
 				$data	= $data->toArray();
@@ -92,7 +97,8 @@ class Client{
 		return http_build_query( $data, NULL, '&' );
 	}
 
-	public function expectFormat( $format ){
+	public function expectFormat( $format )
+	{
 		$this->expectedFormat	= $format;
 	}
 
@@ -103,7 +109,8 @@ class Client{
 	 *	@param		array		$parameters		Map of GET parameters
 	 *	@return		mixed
 	 */
-	public function get( $path, $parameters = array() ){
+	public function get( $path, $parameters = array() )
+	{
 		if( $parameters )
 			$path	.= "?".$this->buildPostFields( $parameters );
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'GET' );
@@ -117,13 +124,15 @@ class Client{
 	 *	@param		integer		$key		CURL option key (constant)
 	 *	@return		mixed|NULL
 	 */
-	protected function getCurlOption( $key ){
+	protected function getCurlOption( $key )
+	{
 		if( isset( $this->setCurlOptions[$key] ) )
 			return $this->setCurlOptions[$key];
 		return NULL;
 	}
 
-	protected function logRequest(){
+	protected function logRequest()
+	{
 		if( !$this->logRequests )
 			return;
 		$info		= curl_getinfo( $this->handler );
@@ -144,7 +153,8 @@ class Client{
 	 *	@param		array		$parameters		Map of POST parameters
 	 *	@return		mixed
 	 */
-	public function post( $path, $data = array() ){
+	public function post( $path, $data = array() )
+	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'POST' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
@@ -158,7 +168,8 @@ class Client{
 	 *	@param		array		$parameters		Map of PUT parameters
 	 *	@return		mixed
 	 */
-	public function put( $path, $data = array() ){
+	public function put( $path, $data = array() )
+	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'PUT' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
@@ -171,13 +182,15 @@ class Client{
 	 *	@param		string		$path			Resource path to request
 	 *	@return		mixed
 	 */
-	public function delete( $path ){
+	public function delete( $path )
+	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'DELETE' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
 	}
 
-	protected function handleRequest(){
+	protected function handleRequest()
+	{
 		$this->responseHeader	= '';
 		$headers	= $this->requestHeaders;
 
@@ -244,7 +257,8 @@ class Client{
 	 *	@param		string		$password	HTTP Basic Auth password
 	 *	@return		void
 	 */
-	public function setBasicAuth( $username, $password ){
+	public function setBasicAuth( $username, $password )
+	{
 		if( !strlen( trim( $username ) ) )
 			return;
 		$encoded	= base64_encode( $username . ':' . $password );
@@ -261,18 +275,21 @@ class Client{
 	 *	@param		mixed		$value		Value of CURL option to set
 	 *	@return		void
 	 */
-	protected function setCurlOption( $key, $value ){
+	protected function setCurlOption( $key, $value )
+	{
 		$this->setCurlOptions[$key]	= $value;
 		curl_setopt( $this->handler, $key, $value );
 	}
 
-	public function setLogErrors( $filePath ){
+	public function setLogErrors( $filePath )
+	{
 		if( !file_exists( dirname( $filePath ) ) )
 			\FS_Folder_Editor::createFolder( $filePath );
 		$this->logErrors	= $filePath;
 	}
 
-	public function setLogRequests( $filePath ){
+	public function setLogRequests( $filePath )
+	{
 		if( !file_exists( dirname( $filePath ) ) )
 			\FS_Folder_Editor::createFolder( $filePath );
 		$this->logRequests	= $filePath;
