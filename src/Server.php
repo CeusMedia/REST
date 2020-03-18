@@ -56,6 +56,7 @@ class Server
 			'PHP'		=> TRUE,
 			'XML'		=> FALSE,
 		),
+		'enableCors'		=> TRUE,
 	);
 	protected $formats		= array();
 	protected $context;
@@ -76,6 +77,9 @@ class Server
 		$this->context->router		= new Router();
 		$this->context->buffer		= new \UI_OutputBuffer();
 
+		if( $this->options->enableCors ){
+			$this->context->response->addHeaderPair( 'Access-Control-Allow-Origin', '*' );
+		}
 
 		if( !empty( $this->options->routesFile ) ){
 			$source	= new RouterRegistrySourceJsonFile( $this->options->routesFile );
