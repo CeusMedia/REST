@@ -1,0 +1,9 @@
+{
+	"hans.testmann": {
+		"password": "myPassword"
+	},
+	"peter.pan": {
+		"password": "myPasswort",
+		"disabled": true
+	}
+}

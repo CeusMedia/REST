@@ -1,0 +1,18 @@
+#result {
+	}
+#result ul>li {
+	text-decoration: underline;
+	}
+#result ul>li:hover {
+	background-color: rgba(191, 191, 191, 0.5);
+	}
+#result td.cell-actions {
+	text-align: right;
+	}
+
+.panel {
+	border-radius: 0.5em;
+	box-shadow: 2px 2px 12px 1px rgba(127, 127, 127, 0.5);
+	padding: 0.5em 2em;
+	margin: 0.5em 1.5em 1em 0em;
+	}

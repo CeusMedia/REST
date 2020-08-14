@@ -14,4 +14,5 @@ $options	= array(
 
 $server	= new Server( $options );
 $server->addRouterRegistrySource( new \CeusMedia\Router\Registry\Source\JsonFile( 'routes.json' ) );
+//$server->registerAccessCheck( 'AccessCheck_User', 'perform' );
 $server->handleRequest();

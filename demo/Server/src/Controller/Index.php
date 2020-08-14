@@ -6,6 +6,6 @@ class Controller_Index{
 	}
 
 	public function index(){
-		return 'HTTP REST Server Index';
+		return 'HTTP REST Server Index | Try path: test';
 	}
 }?>

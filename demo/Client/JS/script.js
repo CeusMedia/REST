@@ -1,67 +1,65 @@
-var App = {
-    serverUrl: null,
-	client: null,
-	run: function() {
-		this.client = new RestClient(this.serverUrl);
-		App.Resource.Test.index();
-//		this.get('test', {}, function(r){console.log(r);});
-//		console.log('Hello!');
-	},
-};
 
-function RestClient(url) {
+function ResourceTest(app) {
 
-    this.url = url;
+	this.app = app;
 
-	function request(method, options, params, data, callback){
-		var options = jQuery.extend({
-			method: method,
-			error: function(a, b){
-				console.log({a: a, b: b});
-			},
-			success: callback
-		}, options);
-		jQuery.ajax(options);
+	this.add = function(id, callback){
+		var resource = this;
+		this.app.client.post('test', {}, {id: id}, function(response){
+			if(resource.app.options.verbose)
+				console.log(JSON.stringify(response));
+			resource.index(callback);
+//			if(typeof callback === "function")
+//				callback();
+		});
 	}
 
-	this.get = function(path, params, callback){
-		request('GET', {url: this.url + path}, params, {}, callback);
+	this.get = function(testId, callback){
+		var resource = this;
+		this.app.client.get('test/' + new String(testId), {}, function(response){
+			if(resource.app.options.verbose)
+				console.log(JSON.stringify(response));
+			if(typeof callback === "function")
+				callback();
+		});
 	}
 
-	this.post = function(path, data, callback){
-	}
-
-	this.put = function(path, params, data, callback){
-	}
-
-	this.delete = function(path, callback){
-	}
-};
-
-App.Resource = {};
-
-App.Resource.Test = {
-
-	index: function(){
-		App.client.get('test', {}, function(response){
+	this.index = function(callback){
+		var resource = this;
+		this.app.client.get('test', {}, function(response){
+			if(resource.app.options.verbose)
+				console.log({response: response});
 			var target = jQuery("#result");
-			var list = jQuery("<ul></ul>");
+			var list = jQuery("<table></table>").addClass('table table-striped');
+			list.append(jQuery("<tr><th>ID</th><th>Actions</th></tr>"));
 			jQuery.each(response.items, function(){
 				var that = this;
-				var item = jQuery("<li></li>").html(this.id);
-				item.on("click", function(){
-					App.Resource.Test.get(that.id)
+				var row = jQuery("<tr></tr>");
+				var item = jQuery("<td></td>").html(this.id).on("click", function(){
+					resource.get(that.id)
 				});
-				list.append(item);
+				row.append(item);
+				var btnRemove = jQuery("<button></button>").prop({type: 'button'}).html('remove');
+				btnRemove.addClass('btn btn-small btn-danger');
+				btnRemove.on("click", function(){
+					resource.remove(that.id);
+				});
+				var item = jQuery("<td></td>").addClass('cell-actions').html(btnRemove);
+				row.append(item);
+				list.append(row);
 			});
 			target.html(list);
+			if(typeof callback === "function")
+				callback();
 		});
-	},
+	}
 
-	get: function(testId){
-		console.log(testId);
-		App.client.get('test/' + new String(testId), {}, function(response){
-			alert(JSON.stringify(response));
+	this.remove = function(testId, callback){
+		var resource = this;
+		this.app.client.delete('test/' + testId, {}, function(response){
+			if(resource.app.options.verbose)
+				console.log(JSON.stringify(response));
+			resource.index(callback);
 		});
 	}
 }

@@ -36,6 +36,7 @@ class Resource_Model_File_JSON{
 		$this->check( $id, TRUE, FALSE );
 		unset( $this->items[$id] );
 		$this->save();
+		return TRUE;
 	}
 
 	public function flush(){
