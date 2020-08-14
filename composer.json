@@ -22,7 +22,9 @@
     "ceus-media/router": "dev-master"
   },
   "require-dev": {
-    "phpunit/phpunit": "^4.8",
+    "phpunit/phpunit": "*",
+    "phpstan/phpstan": "*",
+    "phpstan/phpstan-strict-rules": "*",
     "ceus-media/cache": "dev-master",
     "ceus-media/doc-creator": "^0.9"
   },
