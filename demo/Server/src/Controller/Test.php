@@ -13,13 +13,12 @@ class Controller_Test extends \CeusMedia\REST\Server\Controller{
 	public function index(){
 		$order	= $this->resources->request->get( 'order' );
 		$limit	= max( (int) $this->resources->request->get( 'limit' ), 0 );
-		$limit	= $limit ? $limit : 100;
+		$limit	= $limit ? $limit : 10;
 		$page	= max( (int) $this->resources->request->get( 'page' ), 1 );
 		$total	= $this->model->count();
 
 		//  --  DISCOVERY  --  //
-//		print_m( $this->resources->request->getAllFromSource( 'GET' ) );die;
-		$this->decoratePagination( $total, $limit, $page, $this->resources->request->getAllFromSource( 'GET' )->getAll() );
+		$this->decoratePagination( $total, $limit, $page, $this->resources->request->getAllFromSource( 'GET' ) );
 
 		$data	= array(
 			'items'	=> $this->model->index( $limit, $page ),
@@ -33,7 +32,7 @@ class Controller_Test extends \CeusMedia\REST\Server\Controller{
 	}
 
 	public function create(){
-		$data	= $this->resources->request->getAllFromSource( 'POST' )->getAll();
+		$data	= $this->resources->request->getAllFromSource( 'POST' );
 		return $this->model->create( $data );
 	}
 

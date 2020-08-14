@@ -12,7 +12,7 @@ class Resource_Model_File_JSON{
 	}
 
 	public function has( $id ){
-		return array_key_exists( $id, $this->items );
+		return array_key_exists( (string) $id, $this->items );
 	}
 
 	public function count(){
@@ -20,7 +20,7 @@ class Resource_Model_File_JSON{
 	}
 
 	public function create( $data = array() ){
-		$id		= time( TRUE );
+		$id		= time();//microtime( TRUE );
 		$data	= array_merge( $data, array(
 			'id'			=> $id,
 			'views'			=> 0,

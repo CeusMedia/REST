@@ -4,7 +4,7 @@ require_once '../../../vendor/autoload.php';
 //  try to detect installation
 $serverPath	= dirname( dirname( getEnv( 'REQUEST_URI' ) ) ).'/Server/';
 $serverUrl	= 'http://localhost:1080/'.$serverPath;
-$serverUrl	= 'https://localhost:10443/'.$serverPath;
+//$serverUrl	= 'https://localhost:10443/'.$serverPath;
 //$serverUrl	= 'http://127.0.0.1:1080/'.$serverPath;
 //$serverUrl	= 'https://127.0.0.1:10443/'.$serverPath;
 

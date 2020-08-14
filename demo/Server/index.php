@@ -4,6 +4,7 @@
 use \CeusMedia\REST\Server as Server;
 
 error_reporting( E_ALL );
+ini_set( 'display_errors', 'On' );
 \Loader::registerNew( 'php', NULL, './src/' );
 new UI_DevOutput;
 

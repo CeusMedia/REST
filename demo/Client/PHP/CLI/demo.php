@@ -1,7 +1,7 @@
 <?php
 (@include '../../../../vendor/autoload.php') or die('Please use composer to install required packages.' . PHP_EOL);
 
-$baseUri	= 'http://localhost/lib/CeusMedia/REST/demo/Server/';
+	$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
 //$baseUri	= 'http://domain.tld/path/to/server/';
 
 $isConsole	= !getEnv( 'HTTP_HOST' );
