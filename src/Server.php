@@ -87,10 +87,13 @@ class Server
 			'allowMethods'	=> 'Access-Control-Allow-Methods',
 			'allowHeaders'	=> 'Access-Control-Allow-Headers',
 		);
+
 		foreach( $accessControlSettings as $optionKey => $headerKey ){
 			if( strlen( $accessControl->get( $optionKey ) ) ){
-				$header	= new \Net_HTTP_Header_Field( $headerKey, $accessControl->get( $optionKey ) );
-				$this->context->response->addHeader( $header );
+				if( $accessControl->get( $optionKey ) ){
+					$header	= new \Net_HTTP_Header_Field( $headerKey, $accessControl->get( $optionKey ) );
+					$this->context->response->addHeader( $header );
+				}
 			}
 		}
 
@@ -198,22 +201,26 @@ class Server
 			$path	= substr( $path, 0, strrpos( $path, '.' ) );
 		try{
 			$this->context->router->setMethod( $method );
+			ob_start();
 			$route		= $this->context->router->resolve( $path );
+			$buffer		= ob_get_clean();
 			$this->checkAccess( $route );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat( $result );
 			$content	= $format->transform( $this->context->response, $result );
 			$this->log( 200 );
-			$this->context->response->setBody( $content );
-			ResponseSender::sendResponse( $this->context->response );
+			$this->context->response->setBody( $content.$buffer );
+			ResponseSender::sendResponse( $this->context->response, NULL, FALSE );
 		}
 		catch( \Exception $e ){
 			$this->log( 500 );
-			$text	= $this->handleException( $e ).'.';
+			$text		= $this->handleException( $e ).'.';
+			$buffer		= ob_get_clean();
 			$content	= '<h1>'.$this->context->response->getStatus().'</h1>'.$text;
-			$this->context->response->setBody( $content );
+			$buffer		= strlen( trim( $buffer ) ) ? $buffer : $buffer;
+			$this->context->response->setBody( $content.$buffer );
 			$this->context->response->addHeaderPair( 'Content-Type', 'text/html' );
-			ResponseSender::sendResponse( $this->context->response );
+			ResponseSender::sendResponse( $this->context->response, NULL, FALSE );
 		}
 	}
 
