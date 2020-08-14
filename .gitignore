@@ -4,3 +4,4 @@
 /doc/Test
 #demo/Server/data/*
 /demo/Server/*.log
+/.phpunit.result.cache

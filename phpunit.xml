@@ -1,22 +1,22 @@
-<phpunit bootstrap="vendor/autoload.php" colors="true">
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="vendor/autoload.php" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <coverage processUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+    <report>
+      <clover outputFile="doc/Test/coverage.clover.xml"/>
+      <html outputDirectory="doc/Test/Coverage" lowUpperBound="35" highLowerBound="70"/>
+    </report>
+  </coverage>
   <testsuites>
     <testsuite name="CeusMedia/REST">
       <directory>test</directory>
     </testsuite>
   </testsuites>
-  <filter>
-    <whitelist processUncoveredFilesFromWhitelist="true">
-      <directory suffix=".php">src</directory>
-    </whitelist>
-  </filter>
   <logging>
-    <log type="coverage-html" target="doc/Test/Coverage" lowUpperBound="35" highLowerBound="70"/>
-    <log type="coverage-clover" target="doc/Test/coverage.clover.xml"/>
-    <log type="coverage-php" target="doc/Test/coverage.php.serialized"/>
-    <log type="json" target="doc/Test/logfile.json"/>
-    <log type="tap" target="doc/Test/logfile.tap"/>
-    <log type="junit" target="doc/Test/logfile.xml" logIncompleteSkipped="false"/>
-    <log type="testdox-html" target="doc/Test/testdox.html"/>
-    <log type="testdox-text" target="doc/Test/testdox.txt"/>
+    <junit outputFile="doc/Test/logfile.xml"/>
+    <testdoxHtml outputFile="doc/Test/testdox.html"/>
+    <testdoxText outputFile="doc/Test/testdox.txt"/>
   </logging>
 </phpunit>
