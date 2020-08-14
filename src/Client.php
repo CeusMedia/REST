@@ -48,6 +48,7 @@ class Client
 	protected $setCurlOptions	= array();
 	protected $logErrors;
 	protected $logRequests;
+	protected $handler;
 
 	/**
 	 *	Constructor.
@@ -94,7 +95,7 @@ class Client
 			else
 				$data	= (array) $data;
 		}
-		return http_build_query( $data, NULL, '&' );
+		return http_build_query( $data, '', '&' );
 	}
 
 	public function expectFormat( $format )
@@ -150,7 +151,7 @@ class Client
 	 *	Create resource on server.
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
-	 *	@param		array		$parameters		Map of POST parameters
+	 *	@param		array		$data			Map of POST parameters
 	 *	@return		mixed
 	 */
 	public function post( $path, $data = array() )
@@ -165,7 +166,7 @@ class Client
 	 *	Update resource on server.
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
-	 *	@param		array		$parameters		Map of PUT parameters
+	 *	@param		array		$data			Map of PUT parameters
 	 *	@return		mixed
 	 */
 	public function put( $path, $data = array() )

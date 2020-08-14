@@ -38,6 +38,11 @@ namespace CeusMedia\REST\Server;
  */
 class Context extends \ADT_List_Dictionary
 {
+	public $request;
+	public $response;
+	public $router;
+	public $buffer;
+
 	public function __get( $key )
 	{
 		return $this->get( $key );

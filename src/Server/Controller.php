@@ -38,6 +38,8 @@ namespace CeusMedia\REST\Server;
  */
 class Controller
 {
+	protected $resources;
+
 	/**
 	 *	@see   		https://dzone.com/articles/rest-pagination-spring
 	 */
