@@ -197,7 +197,8 @@ class Server
 		if( preg_match( '/\.\w+$/', $path ) )
 			$path	= substr( $path, 0, strrpos( $path, '.' ) );
 		try{
-			$route		= $this->context->router->resolve( $path, $method );
+			$this->context->router->setMethod( $method );
+			$route		= $this->context->router->resolve( $path );
 			$this->checkAccess( $route );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat( $result );
