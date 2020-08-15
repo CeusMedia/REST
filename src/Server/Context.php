@@ -26,6 +26,11 @@
  */
 namespace CeusMedia\REST\Server;
 
+use CeusMedia\Router\Router as Router;
+use Net_HTTP_Request_Receiver as HttpRequest;
+use Net_HTTP_Response as HttpResponse;
+use UI_OutputBuffer as OutputBuffer;
+
 /**
  *	...
  *
@@ -38,19 +43,36 @@ namespace CeusMedia\REST\Server;
  */
 class Context extends \ADT_List_Dictionary
 {
-	public $request;
-	public $response;
-	public $router;
-	public $buffer;
+	protected $request;
+	protected $response;
+	protected $router;
+	protected $buffer;
 
-	public function __get( $key )
+	public function __construct()
 	{
-		return $this->get( $key );
+		$this->request		= new HttpRequest();
+		$this->response		= new HttpResponse();
+		$this->router		= new Router();
+		$this->buffer		= new OutputBuffer();
 	}
 
-	public function __set( $key, $value )
+	public function getRequest(): HttpRequest
 	{
-		return $this->set( $key, $value );
+		return $this->request;
+	}
+
+	public function getResponse(): HttpResponse
+	{
+		return $this->response;
+	}
+
+	public function getRouter(): Router
+	{
+		return $this->router;
+	}
+
+	public function getBuffer(): OutputBuffer
+	{
+		return $this->buffer;
 	}
 }
-?>
