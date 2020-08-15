@@ -27,7 +27,7 @@
 namespace CeusMedia\REST;
 
 use CeusMedia\Router\Router as Router;
-use CeusMedia\Router\ResolverException as ResolverException; 
+use CeusMedia\Router\ResolverException as ResolverException;
 use CeusMedia\Router\Registry\Source\SourceInterface as RouterRegistrySourceInterface;
 use CeusMedia\Router\Registry\Source\JsonFile as RouterRegistrySourceJsonFile;
 use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolder;
@@ -301,6 +301,7 @@ class Server
 //  @todo handle exception in method calls
 //try{
 		$result		= \Alg_Object_MethodFactory::callObjectMethod( $object, $route->getAction(), (array) $route->getArguments() );
+		//  @todo make handling of dev output configurable + log
 		if( $this->context->buffer->has() ){
 			throw new \RuntimeException( $this->context->buffer->get( TRUE ), 500 );
 		}
