@@ -171,6 +171,7 @@ class Server
 
 	public function handleError( $code, $message, $file, $line )
 	{
+		Log::error( $message );
 		$this->log( 500 );
 		$this->context->getBuffer()->close();
 		$this->context->getResponse()->setStatus( 500 );
@@ -184,6 +185,7 @@ class Server
 		$error	= error_get_last();
 		if( !$error )
 			return;
+		Log::error( $error['message'], $error );
 		$this->log( 500 );
 		$this->context->getBuffer()->close();
 		$this->context->getResponse()->setStatus( 500 );

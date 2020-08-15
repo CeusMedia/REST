@@ -13,10 +13,11 @@ new UI_DevOutput;
 //  --  LOGGING  --  //
 Log::$level	= Log::LEVEL_ALL;
 Log::$file	= __DIR__.'/server.log';
+/* @todo remove – this is done by server, now
 register_shutdown_function( function(){
 	if( !is_null( $e = error_get_last() ) )
 		Log::error( 'Error', $e );
-});
+});*/
 
 //  --  SERVER  --  //
 $options	= array(
