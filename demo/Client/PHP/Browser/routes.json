@@ -1,28 +1,37 @@
 [
-  {
-    "controller": "Controller_Index",
-    "action": "handle",
-    "pattern": "/",
-    "method": "GET"
-  },{
-    "controller": "Controller_Test_Index",
-    "action": "handle",
-    "pattern": "/Test",
-    "method": "GET"
-  },{
-    "controller": "Controller_Test_Add",
-    "action": "handle",
-    "pattern": "/Test/add",
-    "method": "GET,POST"
-  },{
-    "controller": "Controller_Test_Edit",
-    "action": "handle",
-    "pattern": "/Test/:id/edit",
-    "method": "GET,POST"
-  },{
-    "controller": "Controller_Test_Remove",
-    "action": "handle",
-    "pattern": "/Test/:id/remove",
-    "method": "GET,POST"
-  }
+    {
+        "mode": "unknown",
+        "controller": "Controller_Index",
+        "action": "handle",
+        "pattern": "\/",
+        "method": "GET"
+    },
+    {
+        "mode": "unknown",
+        "controller": "Controller_Test_Index",
+        "action": "handle",
+        "pattern": "\/Test",
+        "method": "GET"
+    },
+    {
+        "mode": "unknown",
+        "controller": "Controller_Test_Add",
+        "action": "handle",
+        "pattern": "\/Test\/add",
+        "method": "GET,POST"
+    },
+    {
+        "mode": "unknown",
+        "controller": "Controller_Test_Edit",
+        "action": "handle",
+        "pattern": "\/Test\/:id\/edit",
+        "method": "GET,POST"
+    },
+    {
+        "mode": "unknown",
+        "controller": "Controller_Test_Remove",
+        "action": "handle",
+        "pattern": "\/Test\/:id\/remove",
+        "method": "GET,POST"
+    }
 ]

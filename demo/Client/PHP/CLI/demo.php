@@ -1,8 +1,9 @@
 <?php
 (@include '../../../../vendor/autoload.php') or die('Please use composer to install required packages.' . PHP_EOL);
 
-	$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
 //$baseUri	= 'http://domain.tld/path/to/server/';
+//$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
+$baseUri	= 'http://localhost/lib/GitHub/CeusMedia/REST/demo/Server/';
 
 $isConsole	= !getEnv( 'HTTP_HOST' );
 
@@ -14,7 +15,7 @@ try{
 //	$client->expectFormat( 'PHP' );
 	$client->expectFormat( 'JSON' );
 
-	$items	= $client->get( '/test?limit=2&page=1' );
+	$items	= $client->get( '/test?limit=2&page=0' );
 	print( 'GET: index'.PHP_EOL );
 	print( json_encode( $items, JSON_PRETTY_PRINT ).PHP_EOL );
 

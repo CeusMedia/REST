@@ -89,7 +89,8 @@ class Demo
 
 		$body	= '
 <div class="container">
-	<h1><span class="muted">Ceus Media REST</span> PHP Browser Client Demo</h2>
+	<h1 class="project">Ceus Media REST</h1>
+	<h2 class="project">PHP Browser Client Demo</h2>
 	<div class="row-fluid">
 		<div class="span3">
 			<h3>Entities</h3>
@@ -99,7 +100,23 @@ class Demo
 			'.$result.'
 		</div>
 	</div>
-</div>';
+</div>
+<style>
+h1.project {
+	margin: 0.75em 0 -0.25em 0;
+	padding: 0;
+	line-height: 1.0em;
+	font-weight: normal;
+	font-size: 1.2em;
+	color: #999;
+	letter-spacing: 0.2px;
+	}
+h2.project {
+	color: #444;
+	font-weight: normal;
+	border-bottom: 1px solid #ddd;
+	}
+</style>';
 
 		$page	= new HtmlPage();
 		$page->setBaseHref( 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'SCRIPT_NAME' ) ).'/' );
