@@ -26,6 +26,10 @@
  */
 namespace CeusMedia\REST;
 
+use CeusMedia\Router\Log;
+use FS_Folder_Editor as FolderEditor;
+use Net_HTTP_Header_Parser as HttpHeaderParser;
+
 /**
  *	...
  *
@@ -57,7 +61,7 @@ class Client
 	 *	@param		array		$options		Map of connection options
 	 *	@return		void
 	 */
-	public function __construct( $baseUri, $options = array() )
+	public function __construct( string $baseUri, array $options = array() )
 	{
 		if( !extension_loaded( 'curl' ) )
 			throw new \RuntimeException( "Support for cURL is missing" );
@@ -74,9 +78,10 @@ class Client
 		}
 	}
 
-	public function addRequestHeader( $key, $value )
+	public function addRequestHeader( $key, $value ): self
 	{
 		$this->requestHeaders[]	= $key.": ".$value;
+		return $this;
 	}
 
 	protected function callbackHeaderFunction( $handler, $header )
@@ -85,7 +90,7 @@ class Client
 		return strlen( $header );
 	}
 
-	protected function buildPostFields( $data )
+	protected function buildPostFields( $data ): string
 	{
 		if( is_object( $data ) ){
 			if( method_exists( $data, 'toArray' ) )
@@ -110,7 +115,7 @@ class Client
 	 *	@param		array		$parameters		Map of GET parameters
 	 *	@return		mixed
 	 */
-	public function get( $path, $parameters = array() )
+	public function get( string $path, array $parameters = array() )
 	{
 		if( $parameters )
 			$path	.= "?".$this->buildPostFields( $parameters );
@@ -125,26 +130,27 @@ class Client
 	 *	@param		integer		$key		CURL option key (constant)
 	 *	@return		mixed|NULL
 	 */
-	protected function getCurlOption( $key )
+	protected function getCurlOption( int $key )
 	{
 		if( isset( $this->setCurlOptions[$key] ) )
 			return $this->setCurlOptions[$key];
 		return NULL;
 	}
 
-	protected function logRequest()
+	protected function logRequest(): self
 	{
-		if( !$this->logRequests )
-			return;
-		$info		= curl_getinfo( $this->handler );
-		$message	= sprintf(
-			'%s %s %d %s',
-			date( 'Y-m-d H:i:s' ),
-			$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
-			$info['http_code'],
-			$this->getCurlOption( CURLOPT_URL )
-		);
-		error_log( $message.PHP_EOL, 3, $this->logRequests );
+		if( $this->logRequests ){
+			$info		= curl_getinfo( $this->handler );
+			$message	= sprintf(
+				'%s %s %d %s',
+				date( 'Y-m-d H:i:s' ),
+				$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
+				$info['http_code'],
+				$this->getCurlOption( CURLOPT_URL )
+			);
+			error_log( $message.PHP_EOL, 3, $this->logRequests );
+		}
+		return $this;
 	}
 
 	/**
@@ -154,7 +160,7 @@ class Client
 	 *	@param		array		$data			Map of POST parameters
 	 *	@return		mixed
 	 */
-	public function post( $path, $data = array() )
+	public function post( string $path, array $data = array() )
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'POST' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -169,7 +175,7 @@ class Client
 	 *	@param		array		$data			Map of PUT parameters
 	 *	@return		mixed
 	 */
-	public function put( $path, $data = array() )
+	public function put( string $path, array $data = array() )
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'PUT' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -183,7 +189,7 @@ class Client
 	 *	@param		string		$path			Resource path to request
 	 *	@return		mixed
 	 */
-	public function delete( $path )
+	public function delete( string $path )
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'DELETE' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
@@ -214,6 +220,7 @@ class Client
 		$error		= curl_errno( $this->handler );
 		$info		= curl_getinfo( $this->handler );
 		$this->logRequest();
+		Log::debug( 'handleRequest: curl info: ', $info );
 
 		if( $error )
 			throw new Client\RequestException( curl_error( $this->handler ), $error );
@@ -222,7 +229,7 @@ class Client
 			throw new Client\ResponseException( $body, $info['http_code'] );
 //		$this->requestHeader	= curl_getinfo( $this->handler, CURLINFO_HEADER_OUT );
 
-		$responseHeaderFields	= \Net_HTTP_Header_Parser::parse( $this->responseHeader );
+		$responseHeaderFields	= HttpHeaderParser::parse( $this->responseHeader );
 
 		$links		= array();
 		foreach( $responseHeaderFields->getFieldsByName( 'Link' ) as $link ){
@@ -256,16 +263,17 @@ class Client
 	 *	@access		public
 	 *	@param		string		$username	HTTP Basic Auth username
 	 *	@param		string		$password	HTTP Basic Auth password
-	 *	@return		void
+	 *	@return		self
 	 */
-	public function setBasicAuth( $username, $password )
+	public function setBasicAuth( string $username, string $password ): self
 	{
-		if( !strlen( trim( $username ) ) )
-			return;
-		$encoded	= base64_encode( $username . ':' . $password );
-		$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
-		$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
-		$this->setCurlOption( CURLOPT_USERPWD, $username . ':' . $password );
+		if( strlen( trim( $username ) ) ){
+			$encoded	= base64_encode( $username . ':' . $password );
+			$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
+			$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
+			$this->setCurlOption( CURLOPT_USERPWD, $username . ':' . $password );
+		}
+		return $this;
 	}
 
 	/**
@@ -274,25 +282,28 @@ class Client
 	 *	@access		protected
 	 *	@param		integer		$key		CURL option key (constant)
 	 *	@param		mixed		$value		Value of CURL option to set
-	 *	@return		void
+	 *	@return		self
 	 */
-	protected function setCurlOption( $key, $value )
+	protected function setCurlOption( int $key, $value ): self
 	{
 		$this->setCurlOptions[$key]	= $value;
 		curl_setopt( $this->handler, $key, $value );
+		return $this;
 	}
 
-	public function setLogErrors( $filePath )
+	public function setLogErrors( ?string $filePath ): self
 	{
-		if( !file_exists( dirname( $filePath ) ) )
-			\FS_Folder_Editor::createFolder( $filePath );
+		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
+			FolderEditor::createFolder( $filePath );
 		$this->logErrors	= $filePath;
+		return $this;
 	}
 
-	public function setLogRequests( $filePath )
+	public function setLogRequests( ?string $filePath ): self
 	{
-		if( !file_exists( dirname( $filePath ) ) )
-			\FS_Folder_Editor::createFolder( $filePath );
+		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
+			FolderEditor::createFolder( $filePath );
 		$this->logRequests	= $filePath;
+		return $this;
 	}
 }
