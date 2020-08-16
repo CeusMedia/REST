@@ -201,11 +201,16 @@ class Server
 	{
 		$path		= $this->context->getRequest()->getPath();
 		$method		= $this->context->getRequest()->getMethod();
+		Log::debug( 'REST Server: handleRequest: path => '.$path );
 
-		if( strpos( $path, '?' ) !== FALSE )
-			$path	= substr( $path, 0, strpos( $path, '?' ) );
-		if( preg_match( '/\.\w+$/', $path ) )
-			$path	= substr( $path, 0, strrpos( $path, '.' ) );
+		if( strpos( $path, '#' ) !== FALSE ){
+			$fragment	= substr( $path, strpos( $path, '#' ) + 1 );			//  @todo fragment is unused atm, just cut off
+			$path		= substr( $path, 0, strpos( $path, '#' ) );
+		}
+		if( strpos( $path, '?' ) !== FALSE ){
+			$parameters	= substr( $path, strpos( $path, '?' ) + 1 );			//  @todo $parameters is unused atm, just cut off
+			$path		= substr( $path, 0, strpos( $path, '?' ) );
+		}
 		try{
 			$this->context->getRouter()->setMethod( $method );
 			ob_start();
