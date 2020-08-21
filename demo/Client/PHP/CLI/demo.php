@@ -5,6 +5,9 @@
 //$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
 $baseUri	= 'http://localhost/lib/GitHub/CeusMedia/REST/demo/Server/';
 
+$authUsername	= "";
+$authPassword	= "";
+
 $isConsole	= !getEnv( 'HTTP_HOST' );
 
 if( !$isConsole )
@@ -14,6 +17,8 @@ try{
 	$client	= new \CeusMedia\REST\Client( $baseUri );
 //	$client->expectFormat( 'PHP' );
 	$client->expectFormat( 'JSON' );
+	if( $authUsername )
+		$client->setBasicAuth( $authUsername, $authPassword );
 
 	$items	= $client->get( '/test?limit=2&page=0' );
 	print( 'GET: index'.PHP_EOL );
