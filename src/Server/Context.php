@@ -50,6 +50,7 @@ class Context extends \ADT_List_Dictionary
 
 	public function __construct()
 	{
+		parent::__construct();
 		$this->request		= new HttpRequest();
 		$this->response		= new HttpResponse();
 		$this->router		= new Router();

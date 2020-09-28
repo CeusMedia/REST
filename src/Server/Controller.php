@@ -50,7 +50,7 @@ class Controller
 			$lastPage	= ceil( $total / $limit );
 			if( $page > 1 ){
 				$args	= array_diff_key( $parameters, array( 'limit' => 1, 'page' => 1 ) );
-				$args	= $args ? '?'.http_build_query( $parameters ) : '';
+				$args	= count( $args ) > 0 ? '?'.http_build_query( $parameters ) : '';
 				$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=FIRST' );
 				if( $page < 3 )
 					$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );

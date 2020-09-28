@@ -91,9 +91,9 @@ class Server
 		);
 
 		foreach( $accessControlSettings as $optionKey => $headerKey ){
-			if( strlen( $accessControl->get( $optionKey ) ) ){
+			if( strlen( $accessControl->get( $optionKey ) ) > 0 ){
 				$value	= $accessControl->get( $optionKey );
-				if($value){
+				if( strlen( trim( $value ) ) > 0 ){
 					$header	= new \Net_HTTP_Header_Field( $headerKey, $value );
 					$this->context->getResponse()->addHeader( $header );
 					Log::debug( '> Access-Control: '.$optionKey.' => '.$value );
@@ -101,14 +101,18 @@ class Server
 			}
 		}
 
-		if( !empty( $this->options->routesFile ) ){
-			$source	= new RouterRegistrySourceJsonFile( $this->options->routesFile );
-			$this->getRouter()->getRegistry()->addSource( $source );
+		if( isset( $this->options->routesFile ) ){
+			if( strlen( trim( $this->options->routesFile ) ) > 0 ){
+				$source	= new RouterRegistrySourceJsonFile( $this->options->routesFile );
+				$this->getRouter()->getRegistry()->addSource( $source );
+			}
 		}
 
-		if( !empty( $this->options->routesFolder ) ){
-			$source	= new RouterRegistrySourceJsonFolder( $this->options->routesFolder );
-			$this->getRouter()->getRegistry()->addSource( $source );
+		if( isset( $this->options->routesFolder ) ){
+			if( strlen( trim( $this->options->routesFolder ) ) > 0 ){
+				$source	= new RouterRegistrySourceJsonFolder( $this->options->routesFolder );
+				$this->getRouter()->getRegistry()->addSource( $source );
+			}
 		}
 
 		foreach( $this->options->formats as $format => $active ){
@@ -183,7 +187,7 @@ class Server
 	public function handleFatalError()
 	{
 		$error	= error_get_last();
-		if( !$error )
+		if( is_null( $error ) )
 			return;
 		Log::error( $error['message'], $error );
 		$this->log( 500 );
@@ -229,7 +233,6 @@ class Server
 			$text		= $this->handleException( $e ).'.';
 			$buffer		= ob_get_clean();
 			$content	= '<h1>'.$this->context->getResponse()->getStatus().'</h1>'.$text;
-			$buffer		= strlen( trim( $buffer ) ) ? $buffer : $buffer;
 			$this->context->getResponse()->setBody( $content.$buffer );
 			$this->context->getResponse()->addHeaderPair( 'Content-Type', 'text/html' );
 			ResponseSender::sendResponse( $this->context->getResponse(), NULL, FALSE );
@@ -261,7 +264,7 @@ class Server
 				array( $this->context->getRequest(), $route )
 			);
 			$buffer	= ob_get_clean();
-			if( $error ){
+			if( strlen( trim( $error ) ) > 0 ){
 				$this->log( 401 );
 				$this->context->getBuffer()->close();
 				$this->context->getResponse()->setStatus( 401 );
@@ -276,10 +279,10 @@ class Server
 	{
 		$log	= array(
 			'date'		=> date( 'r' ),
-			'ip'		=> getEnv( 'REMOTE_ADDR' ),
+			'ip'		=> getenv( 'REMOTE_ADDR' ),
 			'method'	=> $this->context->getRequest()->getMethod(),
 			'path'		=> $this->context->getRequest()->getPath(),
-			'referer'	=> getEnv( 'HTTP_REFERER' )
+			'referer'	=> getenv( 'HTTP_REFERER' )
 		);
 //		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
@@ -301,7 +304,7 @@ class Server
 		Log::debug( '> accepts finally: '.json_encode( $accepts ) );
 		foreach( $accepts as $mimeType => $quality ){
 			foreach( $this->formats as $format ){
-				if( in_array( $mimeType, $format->mimeTypes) ){
+				if( in_array( $mimeType, $format->mimeTypes, TRUE ) ){
 					Log::debug( '> final format: '.$mimeType );
 					return $format;
 				}
@@ -318,7 +321,7 @@ class Server
 
 //  @todo handle exception in method calls
 //try{
-		$result		= MethodFactory::callObjectMethod( $object, $route->getAction(), (array) $route->getArguments() );
+		$result		= MethodFactory::callObjectMethod( $object, $route->getAction(), $route->getArguments() );
 		//  @todo make handling of dev output configurable + log
 		if( $this->context->getBuffer()->has() ){
 			throw new \RuntimeException( $this->context->getBuffer()->get( TRUE ), 500 );

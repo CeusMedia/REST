@@ -117,7 +117,7 @@ class Client
 	 */
 	public function get( string $path, array $parameters = array() )
 	{
-		if( $parameters )
+		if( count( $parameters ) > 0 )
 			$path	.= "?".$this->buildPostFields( $parameters );
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'GET' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
@@ -137,6 +137,11 @@ class Client
 		return NULL;
 	}
 
+	/**
+	 *	...
+	 *	@access		protected
+	 *	@return		self
+	 */
 	protected function logRequest(): self
 	{
 		if( $this->logRequests ){
@@ -196,6 +201,11 @@ class Client
 		return $this->handleRequest();
 	}
 
+	/**
+	 *	...
+	 *	@access		protected
+	 *	@return		mixed
+	 */
 	protected function handleRequest()
 	{
 		$this->responseHeader	= '';
@@ -222,7 +232,7 @@ class Client
 		$this->logRequest();
 		Log::debug( 'handleRequest: curl info: ', $info );
 
-		if( $error )
+		if( $error > 0 )
 			throw new Client\RequestException( curl_error( $this->handler ), $error );
 
 		if( $info['http_code'] >= 400 )
@@ -267,7 +277,7 @@ class Client
 	 */
 	public function setBasicAuth( string $username, string $password ): self
 	{
-		if( strlen( trim( $username ) ) ){
+		if( strlen( trim( $username ) ) > 0 ){
 			$encoded	= base64_encode( $username . ':' . $password );
 			$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
 			$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
