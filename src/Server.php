@@ -221,10 +221,13 @@ class Server
 			$this->context->getRouter()->setMethod( $method );
 			ob_start();
 			$route		= $this->context->getRouter()->resolve( $path );
+			Log::debug( 'REST Server: handleRequest: resolved route', $route );
 			$buffer		= ob_get_clean();
 			$this->checkAccess( $route );
+			Log::debug( 'REST Server: handleRequest: is accessible' );
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat();
+			Log::debug( 'REST Server: handleRequest: result:', $result );
 			$content	= $format->transform( $this->context->getResponse(), $result );
 			$this->log( 200 );
 			$this->context->getResponse()->setBody( $content.$buffer );
