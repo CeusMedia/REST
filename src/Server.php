@@ -36,6 +36,7 @@ use CeusMedia\Router\Registry\Source\JsonFile as RouterRegistrySourceJsonFile;
 use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolder;
 use CeusMedia\Router\Route;
 use Net_HTTP_Response_Sender as ResponseSender;
+use Throwable;
 
 /**
  *	...
@@ -223,7 +224,7 @@ class Server
 			$buffer		= ob_get_clean();
 			$this->checkAccess( $route );
 			$result		= $this->realizeResolvedRoute( $route );
-			$format		= $this->negotiateResponseFormat( $result );
+			$format		= $this->negotiateResponseFormat();
 			$content	= $format->transform( $this->context->getResponse(), $result );
 			$this->log( 200 );
 			$this->context->getResponse()->setBody( $content.$buffer );
@@ -305,10 +306,14 @@ class Server
 			if( $this->options->forceMimeType )
 				$accepts	= array( $this->options->forceMimeType => 1 );
 
-			if( preg_match( '/\.\w+$/', $path ) )
-				foreach( $this->formats as $format )
-					if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $path ) )
+			if( preg_match( '/\.\w+$/', $path ) === 0 ){
+				foreach( $this->formats as $format ){
+					$extension	= preg_quote( $format->extension, '/' );
+					if( preg_match( '/'.$extension.'$/', $path ) === 0 ){
 						$accepts	= array( $format->mimeTypes[0] => 1 );
+					}
+				}
+			}
 
 			Log::debug( '> accepts finally: '.json_encode( $accepts ) );
 			foreach( $accepts as $mimeType => $quality ){

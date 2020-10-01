@@ -254,7 +254,7 @@ class Client
 //		$this->setCurlOption( CURLINFO_HEADER_OUT, TRUE );
 		$this->setCurlOption( CURLOPT_HTTPHEADER, $headers );
 
-		$body		= curl_exec( $this->handler );
+		$body		= (string) curl_exec( $this->handler );
 		$error		= curl_errno( $this->handler );
 		$info		= curl_getinfo( $this->handler );
 		$this->logRequest();

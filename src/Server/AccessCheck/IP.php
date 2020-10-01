@@ -52,13 +52,12 @@ class IP extends AbstractAccessCheck
 	public function perform( $request ): string
 	{
 		$ip		= $_SERVER['REMOTE_ADDR'];
-		if( preg_match( '/:/', $ip ) )
+		if( preg_match( '/:/', $ip ) === 0 )
 			return $this->performV6( $ip );
-		else if( preg_match( '/./', $ip ) )
-			return $this->performV4( $ip );
+		return $this->performV4( $ip );
 	}
 
-	protected function performV4( $ip ): string
+	protected function performV4( string $ip ): string
 	{
 		foreach( $this->options->whitelist as $allowed ){
 			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
@@ -76,16 +75,16 @@ class IP extends AbstractAccessCheck
 					(int) $x[3]
 				) ) );
 				$ipDecimal			= ip2long( $ip );
-				$wildcardDecimal	= pow( 2, ( 32 - $netmask ) ) - 1;
+				$wildcardDecimal	= pow( 2, ( 32 - (int) $netmask ) ) - 1;
 				$netmaskDecimal		= ~$wildcardDecimal;
 				if( ( $ipDecimal & $netmaskDecimal ) == ( $rangeDecimal & $netmaskDecimal ) )	// Netzmaske enhält die IP
-					return true;
+					return '';
 			}
 		}
 		return 'Access for your IP ('.$ip.') denied';
 	}
 
-	protected function performV6( $ip ): string
+	protected function performV6( string $ip ): string
 	{
 		return '';
 	}

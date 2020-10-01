@@ -47,9 +47,9 @@ class Auth extends AbstractAccessCheck
 		);
 		$options	= array_merge( $defaultOptions, $options );
 		parent::__construct( $options );
-	);
+	}
 
-	public function perform( $request )
+	public function perform( $request ): string
 	{
 		$split		= [];
 		$headers	= function_exists( 'getallheaders' ) ? getallheaders() : array();
@@ -63,7 +63,7 @@ class Auth extends AbstractAccessCheck
 
 		if( isset( $split[1] ) ){
 			if( trim( $split[1], '"' ) === 'super_geheimes_token' ){
-				return;
+				return '';
 			}
 		}
 		return 'Access denied';

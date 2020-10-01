@@ -64,9 +64,9 @@ class User extends AbstractAccessCheck
 					'enabled'	=> true,
 				), $value );
 			}
-			$givenUsername	= $_SERVER['PHP_AUTH_USER'] ?? NULL;
-			$givenPassword	= $_SERVER['PHP_AUTH_PW'] ?? NULL;
-			if( !strlen( $givenUsername ) || !strlen( $givenPassword ) )
+			$givenUsername	= trim( $_SERVER['PHP_AUTH_USER'] ?? '' );
+			$givenPassword	= trim( $_SERVER['PHP_AUTH_PW'] ?? '' );
+			if( strlen( $givenUsername ) === 0 || strlen( $givenPassword ) === 0 )
 				return 'Insufficient credentials: username and password are needed';
 			if( !array_key_exists( $givenUsername, $users ) )
 				return 'User is unknown';

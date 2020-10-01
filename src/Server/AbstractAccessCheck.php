@@ -38,7 +38,7 @@ namespace CeusMedia\REST\Server;
  */
 abstract class AbstractAccessCheck
 {
-	protected $object;
+	protected $options	= array();
 
 	public function __construct( array $options = array() )
 	{

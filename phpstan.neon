@@ -1,9 +1,9 @@
 includes:
 	- vendor/phpstan/phpstan-strict-rules/rules.neon
-#	- phpstan-baseline.neon
+	- phpstan-baseline.neon
 
 parameters:
-	level: 5
+	level: 8
 	paths:
 		- src
 	checkMissingIterableValueType: false
