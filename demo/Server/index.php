@@ -29,6 +29,6 @@ $options	= array(
 );
 $server	= new Server( $options );
 $server->addRouterRegistrySource( new JsonFileRegistrySource( 'routes.json' ) );
-$server->registerAccessCheck( AccessCheckUser::CLASS, 'perform' );
-$server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => '127.0.0.0'] );
+//$server->registerAccessCheck( AccessCheckUser::CLASS, 'perform' );
+$server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => ['127.0.0.0']] );
 $server->handleRequest();
