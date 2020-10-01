@@ -45,7 +45,7 @@ class Client
 	protected $username;
 	protected $password;
 	protected $baseUri;
-	protected $expectedFormat	= "HTML";
+	protected $expectedFormat	= 'HTML';
 	protected $options			= array();
 	protected $requestHeaders	= array();
 	protected $responseHeader;
@@ -78,34 +78,16 @@ class Client
 		}
 	}
 
-	public function addRequestHeader( $key, $value ): self
+	public function addRequestHeader( string $key, $value ): self
 	{
 		$this->requestHeaders[]	= $key.": ".$value;
 		return $this;
 	}
 
-	protected function callbackHeaderFunction( $handler, $header )
-	{
-		$this->responseHeader	.= $header;
-		return strlen( $header );
-	}
-
-	protected function buildPostFields( $data ): string
-	{
-		if( is_object( $data ) ){
-			if( method_exists( $data, 'toArray' ) )
-				$data	= $data->toArray();
-			else if( method_exists( $data, '__toArray' ) )
-				$data	= $data->__toArray();
-			else
-				$data	= (array) $data;
-		}
-		return http_build_query( $data, '', '&' );
-	}
-
-	public function expectFormat( $format )
+	public function expectFormat( string $format ): self
 	{
 		$this->expectedFormat	= $format;
+		return $this;
 	}
 
 	/**
@@ -122,40 +104,6 @@ class Client
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'GET' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
-	}
-
-	/**
-	 *	Returns option on CURL handler, if set.
-	 *	@access		protected
-	 *	@param		integer		$key		CURL option key (constant)
-	 *	@return		mixed|NULL
-	 */
-	protected function getCurlOption( int $key )
-	{
-		if( isset( $this->setCurlOptions[$key] ) )
-			return $this->setCurlOptions[$key];
-		return NULL;
-	}
-
-	/**
-	 *	...
-	 *	@access		protected
-	 *	@return		self
-	 */
-	protected function logRequest(): self
-	{
-		if( $this->logRequests ){
-			$info		= curl_getinfo( $this->handler );
-			$message	= sprintf(
-				'%s %s %d %s',
-				date( 'Y-m-d H:i:s' ),
-				$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
-				$info['http_code'],
-				$this->getCurlOption( CURLOPT_URL )
-			);
-			error_log( $message.PHP_EOL, 3, $this->logRequests );
-		}
-		return $this;
 	}
 
 	/**
@@ -199,6 +147,86 @@ class Client
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'DELETE' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
 		return $this->handleRequest();
+	}
+
+	/**
+	 *	Set credentials for HTTP Basic Authentication.
+	 *	@access		public
+	 *	@param		string		$username	HTTP Basic Auth username
+	 *	@param		string		$password	HTTP Basic Auth password
+	 *	@return		self
+	 */
+	public function setBasicAuth( string $username, string $password ): self
+	{
+		if( strlen( trim( $username ) ) > 0 ){
+			$encoded	= base64_encode( $username . ':' . $password );
+			$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
+			$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
+			$this->setCurlOption( CURLOPT_USERPWD, $username . ':' . $password );
+		}
+		return $this;
+	}
+
+	/**
+	 *	Set path of error log file.
+	 *	@access		public
+	 *	@param		?string		$filePath		Path of error log file
+	 *	@return		self
+	 */
+	public function setLogErrors( ?string $filePath ): self
+	{
+		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
+			FolderEditor::createFolder( $filePath );
+		$this->logErrors	= $filePath;
+		return $this;
+	}
+
+	/**
+	 *	Set path of request log file.
+	 *	@access		public
+	 *	@param		?string		$filePath		Path of request log file
+	 *	@return		self
+	 */
+	public function setLogRequests( ?string $filePath ): self
+	{
+		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
+			FolderEditor::createFolder( $filePath );
+		$this->logRequests	= $filePath;
+		return $this;
+	}
+
+	//  --  PROTECTED  --  //
+
+	protected function buildPostFields( $data ): string
+	{
+		if( is_object( $data ) ){
+			if( method_exists( $data, 'toArray' ) )
+				$data	= $data->toArray();
+			else if( method_exists( $data, '__toArray' ) )
+				$data	= $data->__toArray();
+			else
+				$data	= (array) $data;
+		}
+		return http_build_query( $data, '', '&' );
+	}
+
+	protected function callbackHeaderFunction( $handler, $header )
+	{
+		$this->responseHeader	.= $header;
+		return strlen( $header );
+	}
+
+	/**
+	 *	Returns option on CURL handler, if set.
+	 *	@access		protected
+	 *	@param		integer		$key		CURL option key (constant)
+	 *	@return		mixed|NULL
+	 */
+	protected function getCurlOption( int $key )
+	{
+		if( isset( $this->setCurlOptions[$key] ) )
+			return $this->setCurlOptions[$key];
+		return NULL;
 	}
 
 	/**
@@ -269,19 +297,22 @@ class Client
 	}
 
 	/**
-	 *	Set credentials for HTTP Basic Authentication.
-	 *	@access		public
-	 *	@param		string		$username	HTTP Basic Auth username
-	 *	@param		string		$password	HTTP Basic Auth password
+	 *	...
+	 *	@access		protected
 	 *	@return		self
 	 */
-	public function setBasicAuth( string $username, string $password ): self
+	protected function logRequest(): self
 	{
-		if( strlen( trim( $username ) ) > 0 ){
-			$encoded	= base64_encode( $username . ':' . $password );
-			$this->requestHeaders[]	= 'Authentication: Basic ' . $encoded;
-			$this->setCurlOption( CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
-			$this->setCurlOption( CURLOPT_USERPWD, $username . ':' . $password );
+		if( $this->logRequests ){
+			$info		= curl_getinfo( $this->handler );
+			$message	= sprintf(
+				'%s %s %d %s',
+				date( 'Y-m-d H:i:s' ),
+				$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
+				$info['http_code'],
+				$this->getCurlOption( CURLOPT_URL )
+			);
+			error_log( $message.PHP_EOL, 3, $this->logRequests );
 		}
 		return $this;
 	}
@@ -298,22 +329,6 @@ class Client
 	{
 		$this->setCurlOptions[$key]	= $value;
 		curl_setopt( $this->handler, $key, $value );
-		return $this;
-	}
-
-	public function setLogErrors( ?string $filePath ): self
-	{
-		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
-			FolderEditor::createFolder( $filePath );
-		$this->logErrors	= $filePath;
-		return $this;
-	}
-
-	public function setLogRequests( ?string $filePath ): self
-	{
-		if( !is_null( $filePath ) && !file_exists( dirname( $filePath ) ) )
-			FolderEditor::createFolder( $filePath );
-		$this->logRequests	= $filePath;
 		return $this;
 	}
 }

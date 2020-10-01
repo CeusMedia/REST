@@ -34,8 +34,8 @@ use CeusMedia\Router\ResolverException as ResolverException;
 use CeusMedia\Router\Registry\Source\SourceInterface as RouterRegistrySourceInterface;
 use CeusMedia\Router\Registry\Source\JsonFile as RouterRegistrySourceJsonFile;
 use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolder;
+use CeusMedia\Router\Route;
 use Net_HTTP_Response_Sender as ResponseSender;
-
 
 /**
  *	...
@@ -75,7 +75,7 @@ class Server
 
 	protected $accessChecks;
 
-	public function __construct( $options = array() )
+	public function __construct( array $options = array() )
 	{
 		Log::debug( 'REST Server: Construction' );
 		$this->options	= (object) $this->mergeOptions( $this->defaultOptions, $options );
@@ -129,9 +129,10 @@ class Server
 		register_shutdown_function( array( $this, "handleFatalError" ) );
 	}
 
-	public function addRouterRegistrySource( RouterRegistrySourceInterface $source )
+	public function addRouterRegistrySource( RouterRegistrySourceInterface $source ): self
 	{
 		$this->getRouter()->getRegistry()->addSource( $source );
+		return $this;
 	}
 
 	public function getRouter()
@@ -154,7 +155,7 @@ class Server
 		return $this->context;
 	}
 
-	protected function handleException( $e )
+	protected function handleException( Throwable $e ): string
 	{
 		if( $e instanceof ResolverException ){
 			$this->context->getResponse()->setStatus( 404 );
@@ -173,7 +174,7 @@ class Server
 		return $e->getMessage();
 	}
 
-	public function handleError( $code, $message, $file, $line )
+	public function handleError( int $code, string $message, string $file, int $line )
 	{
 		Log::error( $message );
 		$this->log( 500 );
@@ -239,14 +240,20 @@ class Server
 		}
 	}
 
-	public function registerAccessCheck( $className, $method )
+	public function registerAccessCheck( string $className, string $method, array $options = array() ): self
 	{
-		$this->accessChecks[]	= (object) array( 'className' => $className, 'method' => $method );
+		$this->accessChecks[]	= (object) [
+			'className'	=> $className,
+			'method'	=> $method,
+			'options'	=> $options
+		];
+		return $this;
 	}
 
-	public function setResource( $key, $object )
+	public function setResource( string $key, $object ): self
 	{
 		$this->context->set( $key, $object );
+		return $this;
 	}
 
 	/*  --  PROTECTED  --  */
@@ -260,7 +267,7 @@ class Server
 			$error	= MethodFactory::callClassMethod(
 				$accessCheck->className,
 				$accessCheck->method,
-				array(),
+				$accessCheck->options,
 				array( $this->context->getRequest(), $route )
 			);
 			$buffer	= ob_get_clean();
@@ -287,33 +294,36 @@ class Server
 //		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
 
-	protected function negotiateResponseFormat( $content )
+	protected function negotiateResponseFormat()
 	{
 		Log::debug( 'REST Server: negotiateResponseFormat' );
-		$path		= $this->context->getRequest()->getPath();
-		$accepts	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE )->getValue( TRUE );
-		Log::debug( '> accepts by request: '.json_encode( $accepts ) );
-		if( $this->options->forceMimeType )
-			$accepts	= array( $this->options->forceMimeType => 1 );
+		$path			= $this->context->getRequest()->getPath();
+		$acceptHeader	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE );
+		if( $acceptHeader ){
+			$accepts = $acceptHeader->getValue( TRUE );
+			Log::debug( '> accepts by request: '.json_encode( $accepts ) );
+			if( $this->options->forceMimeType )
+				$accepts	= array( $this->options->forceMimeType => 1 );
 
-		if( preg_match( '/\.\w+$/', $path ) )
-			foreach( $this->formats as $format )
-				if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $path ) )
-					$accepts	= array( $format->mimeTypes[0] => 1 );
+			if( preg_match( '/\.\w+$/', $path ) )
+				foreach( $this->formats as $format )
+					if( preg_match( '/'.preg_quote( $format->extension, '/' ).'$/', $path ) )
+						$accepts	= array( $format->mimeTypes[0] => 1 );
 
-		Log::debug( '> accepts finally: '.json_encode( $accepts ) );
-		foreach( $accepts as $mimeType => $quality ){
-			foreach( $this->formats as $format ){
-				if( in_array( $mimeType, $format->mimeTypes, TRUE ) ){
-					Log::debug( '> final format: '.$mimeType );
-					return $format;
+			Log::debug( '> accepts finally: '.json_encode( $accepts ) );
+			foreach( $accepts as $mimeType => $quality ){
+				foreach( $this->formats as $format ){
+					if( in_array( $mimeType, $format->mimeTypes, TRUE ) ){
+						Log::debug( '> final format: '.$mimeType );
+						return $format;
+					}
 				}
 			}
 		}
 		throw new \RuntimeException( 'Content type is not supported' );
 	}
 
-	protected function realizeResolvedRoute( \CeusMedia\Router\Route $route )
+	protected function realizeResolvedRoute( Route $route )
 	{
 		if( !class_exists( $route->getController() ) )
 			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
@@ -330,7 +340,6 @@ class Server
 //catch( Exception $e ){}
 		return $result;
 	}
-
 
 	/**
 	* array_merge_recursive does indeed merge arrays, but it converts values with duplicate
@@ -357,7 +366,8 @@ class Server
 	* @author Daniel <daniel (at) danielsmedegaardbuus (dot) dk>
 	* @author Gabriel Sobrinho <gabriel (dot) sobrinho (at) gmail (dot) com>
 	*/
-	protected function mergeOptions( array &$array1, array &$array2 ){
+	protected function mergeOptions( array &$array1, array &$array2 ): array
+	{
 		$merged = $array1;
 		foreach( $array2 as $key => &$value ){
 			$isNest	= is_array( $value ) && isset( $merged[$key] ) && is_array( $merged[$key] );

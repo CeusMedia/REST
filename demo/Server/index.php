@@ -2,6 +2,9 @@
 (@include '../../vendor/autoload.php') or die('Please use composer to install required packages.' . PHP_EOL);
 
 use \CeusMedia\REST\Server;
+use \CeusMedia\REST\Server\AccessCheck\IP as AccessCheckIp;
+use \CeusMedia\REST\Server\AccessCheck\User as AccessCheckUser;
+use \CeusMedia\Router\Registry\Source\JsonFile as JsonFileRegistrySource;
 use \CeusMedia\Router\Log;
 
 //  --  SETUP  --  //
@@ -25,6 +28,7 @@ $options	= array(
 //	'routesFile'	=> 'routes.json',
 );
 $server	= new Server( $options );
-$server->addRouterRegistrySource( new \CeusMedia\Router\Registry\Source\JsonFile( 'routes.json' ) );
-//$server->registerAccessCheck( 'AccessCheck_User', 'perform' );
+$server->addRouterRegistrySource( new JsonFileRegistrySource( 'routes.json' ) );
+$server->registerAccessCheck( AccessCheckUser::CLASS, 'perform' );
+$server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => '127.0.0.0'] );
 $server->handleRequest();
