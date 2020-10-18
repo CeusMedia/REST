@@ -302,18 +302,22 @@ class Server
 	{
 		Log::debug( 'REST Server: negotiateResponseFormat' );
 		$path			= $this->context->getRequest()->getPath();
+		Log::debug( '> path: '.$path );
 		$acceptHeader	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE );
 		if( $acceptHeader ){
 			$accepts = $acceptHeader->getValue( TRUE );
 			Log::debug( '> accepts by request: '.json_encode( $accepts ) );
-			if( $this->options->forceMimeType )
+			if( $this->options->forceMimeType ){
 				$accepts	= array( $this->options->forceMimeType => 1 );
+				Log::debug( '> accepts by force: '.json_encode( $accepts ) );
+			}
 
 			if( preg_match( '/\.\w+$/', $path ) === 0 ){
 				foreach( $this->formats as $format ){
 					$extension	= preg_quote( $format->extension, '/' );
-					if( preg_match( '/'.$extension.'$/', $path ) === 0 ){
+					if( preg_match( '/'.$extension.'$/', $path ) === 1 ){
 						$accepts	= array( $format->mimeTypes[0] => 1 );
+						Log::debug( '> accepts by extension: '.json_encode( $accepts ) );
 					}
 				}
 			}
