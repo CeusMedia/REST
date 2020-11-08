@@ -18,7 +18,7 @@
   "minimum-stability": "stable",
   "require": {
     "php": ">=7.3",
-    "ceus-media/common": "^0.8",
+    "ceus-media/common": "^0.8 | dev-master",
     "ceus-media/router": "dev-master"
   },
   "require-dev": {
