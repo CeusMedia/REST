@@ -27,7 +27,7 @@
 namespace CeusMedia\REST\Server;
 
 use CeusMedia\Router\Router as Router;
-use Net_HTTP_Request_Receiver as HttpRequest;
+use Net_HTTP_Request as HttpRequest;
 use Net_HTTP_Response as HttpResponse;
 use UI_OutputBuffer as OutputBuffer;
 
@@ -55,6 +55,7 @@ class Context extends \ADT_List_Dictionary
 		$this->response		= new HttpResponse();
 		$this->router		= new Router();
 		$this->buffer		= new OutputBuffer();
+		$this->request->fromEnv();
 	}
 
 	public function getRequest(): HttpRequest
