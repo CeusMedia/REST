@@ -15,7 +15,7 @@
     "email": "christian.wuerker@ceusmedia.de",
     "jabber": "cwuerker@ceusmedia.de"
   },
-  "minimum-stability": "stable",
+  "minimum-stability": "dev",
   "require": {
     "php": ">=7.3",
     "ceus-media/common": "^0.8 | dev-master",
