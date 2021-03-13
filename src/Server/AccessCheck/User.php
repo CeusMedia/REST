@@ -52,7 +52,7 @@ class User extends AbstractAccessCheck
 	public function perform( $request ): string
 	{
 		if( file_exists( $this->options->filePath ) ){
-			$data	= JsonReader::load( $this->options->filePath, TRUE );
+			$data	= (array) JsonReader::load( $this->options->filePath, TRUE );
 			$users	= array();
 			foreach( $data as $key => $value ){
 				if( isset( $value['disabled'] ) ){

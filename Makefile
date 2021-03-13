@@ -6,10 +6,10 @@ composer-install-dev:
 	@test ! -d vendor/phpunit/phpunit && composer install || true
 
 composer-update:
-	composer update --no-dev
+	@composer update --no-dev
 
 composer-update-dev:
-	composer update
+	@composer update
 
 dev-doc: composer-install-dev
 	@test -f doc/API/search.html && rm -Rf doc/API || true

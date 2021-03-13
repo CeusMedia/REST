@@ -45,11 +45,7 @@ class Client
 	protected $username;
 	protected $password;
 	protected $baseUri;
-<<<<<<< HEAD
-	protected $expectedFormat	= 'HTML';
-=======
 	protected $expectedFormat;
->>>>>>> Support raw post content.
 	protected $options			= array();
 	protected $requestHeaders	= array();
 	protected $responseHeader;
@@ -88,36 +84,7 @@ class Client
 		return $this;
 	}
 
-<<<<<<< HEAD
 	public function expectFormat( string $format ): self
-=======
-	protected function callbackHeaderFunction( $handler, $header )
-	{
-		$this->responseHeader	.= $header;
-		return strlen( $header );
-	}
-
-	/**
-	 *	@todo	handle inputs like int, float etc
-	 */
-	protected function buildPostFields( $data ): string
-	{
-		if( is_string( $data ) )
-			return $data;
-		if( is_object( $data ) ){
-			if( method_exists( $data, 'toArray' ) )
-				$data	= $data->toArray();
-			else if( method_exists( $data, '__toArray' ) )
-				$data	= $data->__toArray();
-			else
-				$data	= (array) $data;
-		}
-		if( is_array( $data ) )
-			return http_build_query( $data, NULL, '&' );
-	}
-
-	public function expectFormat( $format )
->>>>>>> Support raw post content.
 	{
 		$this->expectedFormat	= $format;
 		return $this;
@@ -229,9 +196,13 @@ class Client
 	}
 
 	//  --  PROTECTED  --  //
-
+	/**
+	 *	@todo	handle inputs like int, float etc
+	 */
 	protected function buildPostFields( $data ): string
 	{
+		if( is_string( $data ) )
+			return $data;
 		if( is_object( $data ) ){
 			if( method_exists( $data, 'toArray' ) )
 				$data	= $data->toArray();
@@ -240,7 +211,9 @@ class Client
 			else
 				$data	= (array) $data;
 		}
-		return http_build_query( $data, '', '&' );
+		if( is_array( $data ) )
+			return http_build_query( $data, '', '&' );
+		return '';
 	}
 
 	protected function callbackHeaderFunction( $handler, $header )
