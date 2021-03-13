@@ -1,13 +1,44 @@
 
 # Changelog of CeusMedia/REST
 
-## Version 0.3
+## 0.3
+- Code Quality
+  - Update code style.
+  - Add PHPStan.
+  - Improve code strictness.
+  - Improve code quality.
+  - Improve support for PHPUnit.
+
+- Server
+  - Refactor server context setup.
+  - Support access control headers.
+  - Add CORS option on server.
+  - Support raw post content.
+  - Add access checks.
+  - Prepare logging.
+  - Improve error logging.
+  - Use other source class for HTTP request handling.
+
+- Demos
+  - Update demos.
+  - Update server demo.
+  - Updated JS client demo.
+
+- General
+  - Update copyright year.
+  - Update composer and make file.
+  - Require PHP atleast 7.3.
+  - Allow CeusMedia:Common to be dev-master.
+  - Set stability to dev.
+
+
+## 0.2.x
 - 0.2.1: Add server context as resource pool.
 - 0.2.2: Add register for external access checkers.
 - 0.2.2: Add generell error handler.
 - 0.2.2: Support additional request headers in client.
 
-## Version 0.2
+## 0.2
 - Document link for server controller pagination discovery support.
 - Set DocCreator documents path to project root.
 - Add this changelog.
@@ -30,7 +61,7 @@
 - Rename demo to Server demo.
 - Updated demo.
 
-## Version 0.1
+## 0.1
 - Add make file.
 - Add PHPUnit file.
 - Add DocCreator file.
