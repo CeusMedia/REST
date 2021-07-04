@@ -51,7 +51,9 @@ class IP extends AbstractAccessCheck
 
 	public function perform( $request ): string
 	{
+		Log::debug( 'AccessCheck: IP: perform' );
 		$ip		= $_SERVER['REMOTE_ADDR'];
+		Log::debug( '> IP: '.$ip );
 		if( preg_match( '/:/', $ip ) === 0 )
 			return $this->performV6( $ip );
 		return $this->performV4( $ip );
@@ -81,6 +83,7 @@ class IP extends AbstractAccessCheck
 					return '';
 			}
 		}
+		Log::debug( '> Access denied' );
 		return 'Access for your IP ('.$ip.') denied';
 	}
 

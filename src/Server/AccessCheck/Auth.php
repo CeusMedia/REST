@@ -27,6 +27,7 @@
 namespace CeusMedia\REST\Server\AccessCheck;
 
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\Router\Log;
 
 /**
  *	...
@@ -51,6 +52,7 @@ class Auth extends AbstractAccessCheck
 
 	public function perform( $request ): string
 	{
+		Log::debug( 'AccessCheck: Auth: perform' );
 		$split		= [];
 		$headers	= function_exists( 'getallheaders' ) ? getallheaders() : array();
 
@@ -61,11 +63,13 @@ class Auth extends AbstractAccessCheck
 		else if( isset( $headers['Authorization'] ) )
 			$split	= explode( '=', $headers['Authorization'] );
 
+		Log::debug( '> found: '.json_encode( $split ) );
 		if( isset( $split[1] ) ){
 			if( trim( $split[1], '"' ) === 'super_geheimes_token' ){
 				return '';
 			}
 		}
+		Log::debug( '> Access denied' );
 		return 'Access denied';
 	}
 }

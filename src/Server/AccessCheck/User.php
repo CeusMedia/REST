@@ -51,6 +51,7 @@ class User extends AbstractAccessCheck
 
 	public function perform( $request ): string
 	{
+		Log::debug( 'AccessCheck: User: perform' );
 		if( file_exists( $this->options->filePath ) ){
 			$data	= (array) JsonReader::load( $this->options->filePath, TRUE );
 			$users	= array();
