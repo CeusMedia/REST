@@ -268,10 +268,10 @@ class Server
 			return;
 		foreach( $this->accessChecks as $accessCheck ){
 			ob_start();
-			$error	= MethodFactory::callClassMethod(
+			$error	= MethodFactory::staticCallClassMethod(
 				$accessCheck->className,
 				$accessCheck->method,
-				$accessCheck->options,
+				[$this->context, $accessCheck->options],
 				array( $this->context->getRequest(), $route )
 			);
 			$buffer	= ob_get_clean();
@@ -343,7 +343,8 @@ class Server
 
 //  @todo handle exception in method calls
 //try{
-		$result		= MethodFactory::callObjectMethod( $object, $route->getAction(), $route->getArguments() );
+		$factory	= new MethodFactory( $object );
+		$result		= $factory->callMethod( $route->getAction(), $route->getArguments() );
 		//  @todo make handling of dev output configurable + log
 		if( $this->context->getBuffer()->has() ){
 			throw new \RuntimeException( $this->context->getBuffer()->get( TRUE ), 500 );

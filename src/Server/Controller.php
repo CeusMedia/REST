@@ -40,27 +40,33 @@ class Controller
 {
 	protected $resources;
 
+	public function __construct( $context )
+	{
+		$this->resources	= $context;
+	}
+
 	/**
 	 *	@see   		https://dzone.com/articles/rest-pagination-spring
 	 */
 	protected function decoratePagination( $total, $limit, $page, $parameters = array() )
 	{
-		$path	= $this->resources->request->getPath();
+		$response	= $this->resources->getResponse();
+		$path	= $this->resources->getRequest()->getPath();
 		if( $limit && $limit < $total ){
 			$lastPage	= ceil( $total / $limit );
 			if( $page > 1 ){
 				$args	= array_diff_key( $parameters, array( 'limit' => 1, 'page' => 1 ) );
 				$args	= count( $args ) > 0 ? '?'.http_build_query( $parameters ) : '';
-				$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=FIRST' );
+				$response->addHeaderPair( 'Link', $path.$args.'; rel=FIRST' );
 				if( $page < 3 )
-					$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
+					$response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
 				else{
 					$args	= array_merge( $parameters, array(
 						'limit'	=> $limit,
 						'page'	=> $page - 1,
 					) );
 					$args	= '?'.http_build_query( $args );
-					$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
+					$response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
 				}
 			}
 			if( $page < $lastPage ){
@@ -69,14 +75,14 @@ class Controller
 					'page'	=> $page + 1,
 				) );
 				$args	= '?'.http_build_query( $args );
-				$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=NEXT' );
+				$response->addHeaderPair( 'Link', $path.$args.'; rel=NEXT' );
 
 				$args	= array_merge( $parameters, array(
 					'limit'	=> $limit,
 					'page'	=> $lastPage,
 				) );
 				$args	= '?'.http_build_query( $args );
-				$this->resources->response->addHeaderPair( 'Link', $path.$args.'; rel=LAST' );
+				$response->addHeaderPair( 'Link', $path.$args.'; rel=LAST' );
 			}
 		}
 	}
