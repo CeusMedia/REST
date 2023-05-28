@@ -17,20 +17,70 @@
   },
   "minimum-stability": "dev",
   "require": {
-    "php": ">=7.3",
-    "ceus-media/common": ">=0.8.5.8 | dev-master",
-    "ceus-media/router": "dev-master"
+    "php": "^8.1",
+    "ceus-media/common": "^1.0 | 1.0.x-dev",
+    "ceus-media/router": "^0.5 | 0.5.x-dev"
   },
   "require-dev": {
-    "phpunit/phpunit": "*",
+    "ceus-media/cache": "^0.5 | 0.5.x-dev",
+    "ceus-media/doc-creator": "^0.9",
+    "php-parallel-lint/php-parallel-lint": "*",
     "phpstan/phpstan": "*",
     "phpstan/phpstan-strict-rules": "*",
-    "ceus-media/cache": "dev-master",
-    "ceus-media/doc-creator": "^0.9"
+    "phpunit/phpunit": "*"
   },
   "autoload": {
     "psr-4": {
         "CeusMedia\\REST\\": ["src/"]
     }
+  },
+  "scripts": {
+    "dev:all": [
+      "@dev:test-syntax",
+      "@dev:phpstan",
+      "@dev:phpunit"
+    ],
+    "dev:install-quiet": "composer install --quiet",
+    "dev:update-quiet": "composer update --quiet",
+    "dev:phpstan": [
+      "@dev:install-quiet",
+      "XDEBUG_MODE=off vendor/bin/phpstan analyze --configuration=phpstan.neon --memory-limit=1G --verbose"
+    ],
+    "dev:phpstan-clear": [
+      "@dev:install-quiet",
+      "XDEBUG_MODE=off vendor/bin/phpstan clear-result-cache --configuration=phpstan.neon --verbose"
+    ],
+    "dev:phpstan-save": [
+      "@dev:install-quiet",
+      "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon --generate-baseline phpstan-baseline.neon --verbose"
+    ],
+    "dev:phpunit": [
+      "@dev:install-quiet",
+      "XDEBUG_MODE=coverage php vendor/bin/phpunit --configuration phpunit10.xml --testsuite units"
+    ],
+    "dev:rector": [
+      "@dev:install-quiet",
+      "vendor/bin/rector process --config=rector.php --dry-run"
+    ],
+    "dev:rector-fix": [
+      "@dev:install-quiet",
+      "vendor/bin/rector process --config=rector.php"
+    ],
+    "dev:test-syntax": [
+      "@dev:install-quiet",
+      "vendor/bin/parallel-lint . -j 10 --colors --exclude vendor"
+    ]
+  },
+  "scripts-descriptions": {
+    "dev:all": "Install, test syntax, run PHPStan and PHPUnit",
+    "dev:install": "Installs project dependencies for Development stage",
+    "dev:update": "Updates project dependencies for Development stage",
+    "dev:phpstan": "Validate codebase with PHPStan",
+    "dev:phpstan-clear": "Clear PHPStan cache",
+    "dev:phpstan-save": "Store current results in ignore list",
+    "dev:phpunit": "Run unit tests",
+    "dev:rector": "Shows suggestions of configured Rector rules",
+    "dev:rector-fix": "Apply currently configured Rector rules to codebase",
+    "dev:test-syntax": "Validate code base syntax using PHP linter"
   }
 }
