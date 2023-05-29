@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,11 +21,13 @@
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\Format;
+
+use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
 
 /**
  *	...
@@ -32,19 +35,24 @@ namespace CeusMedia\REST\Server\Format;
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class PHP implements FormatInterface
 {
-	public $contentType	= 'application/x-php';
+	public string $contentType	= 'application/x-php';
 
-	public $extension	= '.php';
+	public string $extension	= '.php';
 
-	public $mimeTypes	= array( 'application/x-php' );
+	public array $mimeTypes		= ['application/x-php'];
 
-	public function transform( $response, $content )
+	/**
+	 *	@param		HttpResponse			$response
+	 *	@param		object|array|string		$content
+	 *	@return		string
+	 */
+	public function transform( HttpResponse $response, object|array|string $content ): string
 	{
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return serialize( $content );

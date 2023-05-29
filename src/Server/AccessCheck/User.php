@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,14 +21,15 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\AccessCheck;
 
-use FS_File_JSON_Reader as JsonReader;
+use CeusMedia\Common\FS\File\JSON\Reader as JsonReader;
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\Router\Log;
 
 /**
  *	...
@@ -35,13 +37,13 @@ use CeusMedia\REST\Server\AbstractAccessCheck;
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class User extends AbstractAccessCheck
 {
-	public function __construct( array $options = array() )
+	public function __construct( array $options = [] )
 	{
 		$defaultOptions = array(
 			'filePath'	=> 'users.json',
@@ -52,9 +54,9 @@ class User extends AbstractAccessCheck
 	public function perform( $request ): string
 	{
 		Log::debug( 'AccessCheck: User: perform' );
-		if( file_exists( $this->options->filePath ) ){
-			$data	= (array) JsonReader::load( $this->options->filePath, TRUE );
-			$users	= array();
+		if( file_exists( $this->options['filePath'] ) ){
+			$data	= (array) JsonReader::load( $this->options['filePath'], TRUE );
+			$users	= [];
 			foreach( $data as $key => $value ){
 				if( isset( $value['disabled'] ) ){
 					unset( $value['disabled'] );

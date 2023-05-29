@@ -2,7 +2,7 @@
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,13 +20,14 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\AccessCheck;
 
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\Router\Log;
 
 /**
  *	...
@@ -34,18 +35,18 @@ use CeusMedia\REST\Server\AbstractAccessCheck;
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class IP extends AbstractAccessCheck
 {
-	public function __construct( array $options = array() )
+	public function __construct( array $options = [] )
 	{
-		$defaultOptions = array(
+		$defaultOptions = [
 			'whitelist'	=> ['127.0.0.1', '::1'],
 			'blacklist'	=> [],
-		);
+		];
 		parent::__construct( array_merge( $defaultOptions, $options ) );
 	}
 
@@ -61,10 +62,10 @@ class IP extends AbstractAccessCheck
 
 	protected function performV4( string $ip ): string
 	{
-		foreach( $this->options->whitelist as $allowed ){
+		foreach( $this->options['whitelist'] as $allowed ){
 			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
 				return '';
-			else if( strpos( $allowed, '/' ) !== FALSE ){
+			else if( str_contains( $allowed, '/' ) ){
 				// Netzmaske prüfen
 				list( $allowed, $netmask )	= explode( '/', $allowed, 2 );
 				$x	= explode( '.', $allowed );
@@ -79,7 +80,7 @@ class IP extends AbstractAccessCheck
 				$ipDecimal			= ip2long( $ip );
 				$wildcardDecimal	= pow( 2, ( 32 - (int) $netmask ) ) - 1;
 				$netmaskDecimal		= ~$wildcardDecimal;
-				if( ( $ipDecimal & $netmaskDecimal ) == ( $rangeDecimal & $netmaskDecimal ) )	// Netzmaske enhält die IP
+				if( ( $ipDecimal & $netmaskDecimal ) == ( $rangeDecimal & $netmaskDecimal ) )	// Netzmaske enthält die IP
 					return '';
 			}
 		}

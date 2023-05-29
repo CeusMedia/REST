@@ -18,6 +18,7 @@
   "minimum-stability": "dev",
   "require": {
     "php": "^8.1",
+    "ext-curl": "*",
     "ceus-media/common": "^1.0 | 1.0.x-dev",
     "ceus-media/router": "^0.5 | 0.5.x-dev"
   },

@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,22 +21,32 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST;
 
-use ADT_List_Dictionary as Dictionary;
-use Alg_Object_Factory as ObjectFactory;
-use Alg_Object_MethodFactory as MethodFactory;
+use CeusMedia\Common\ADT\Collection\Dictionary as Dictionary;
+use CeusMedia\Common\Alg\Obj\Factory as ObjectFactory;
+use CeusMedia\Common\Alg\Obj\MethodFactory as MethodFactory;
+use CeusMedia\Common\Net\HTTP\Header\Field as HeaderField;
+use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
+use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
+use CeusMedia\Common\Net\HTTP\Response\Sender as ResponseSender;
+use CeusMedia\REST\Server\Context;
 use CeusMedia\Router\Log;
 use CeusMedia\Router\ResolverException as ResolverException;
 use CeusMedia\Router\Registry\Source\SourceInterface as RouterRegistrySourceInterface;
 use CeusMedia\Router\Registry\Source\JsonFile as RouterRegistrySourceJsonFile;
 use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolder;
 use CeusMedia\Router\Route;
-use Net_HTTP_Response_Sender as ResponseSender;
+use CeusMedia\Router\Router;
+use Exception;
+use OutOfRangeException;
+use RangeException;
+use ReflectionException;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -44,39 +55,43 @@ use Throwable;
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class Server
 {
-	protected $options;
+	protected object $options;
 
-	protected $defaultOptions	= array(
+	protected array $defaultOptions	= [
 		'classContext'		=> Server\Context::class,
 		'forceMimeType'		=> NULL,
 		'routesFile'		=> NULL,
 		'routesFolder'		=> NULL,
-		'formats'			=> array(
+		'formats'			=> [
 			'HTML'		=> TRUE,
 			'JSON'		=> TRUE,
 			'PHP'		=> TRUE,
 			'XML'		=> FALSE,
-		),
-		'accessControl'	=> array(
+		],
+		'accessControl'	=> [
 			'allowOrigin'	=> '*',
 			'allowMethods'	=> 'GET,POST,PUT,DELETE,OPTIONS',
 			'allowHeaders'	=> 'authorization',
-		),
-	);
+		],
+	];
 
-	protected $formats		= array();
+	protected array $formats		= [];
 
-	protected $context;
+	protected Context $context;
 
-	protected $accessChecks;
+	protected array $accessChecks	= [];
 
-	public function __construct( array $options = array() )
+	/**
+	 * @param		array		$options
+	 * @throws		ReflectionException
+	 */
+	public function __construct( array $options = [] )
 	{
 		Log::debug( 'REST Server: Construction' );
 		$this->options	= (object) $this->mergeOptions( $this->defaultOptions, $options );
@@ -85,17 +100,17 @@ class Server
 		$this->context	= ObjectFactory::createObject( $this->options->classContext );
 
 		$accessControl			= new Dictionary( $this->options->accessControl );
-		$accessControlSettings	= array(
+		$accessControlSettings	= [
 			'allowOrigin'	=> 'Access-Control-Allow-Origin',
 			'allowMethods'	=> 'Access-Control-Allow-Methods',
 			'allowHeaders'	=> 'Access-Control-Allow-Headers',
-		);
+		];
 
 		foreach( $accessControlSettings as $optionKey => $headerKey ){
 			if( strlen( $accessControl->get( $optionKey ) ) > 0 ){
 				$value	= $accessControl->get( $optionKey );
 				if( strlen( trim( $value ) ) > 0 ){
-					$header	= new \Net_HTTP_Header_Field( $headerKey, $value );
+					$header	= new HeaderField( $headerKey, $value );
 					$this->context->getResponse()->addHeader( $header );
 					Log::debug( '> Access-Control: '.$optionKey.' => '.$value );
 				}
@@ -126,8 +141,8 @@ class Server
 			}
 		}
 
-		set_error_handler( array( $this, "handleError" ) );
-		register_shutdown_function( array( $this, "handleFatalError" ) );
+		set_error_handler( [$this, "handleError"] );
+		register_shutdown_function( [$this, "handleFatalError"] );
 	}
 
 	public function addRouterRegistrySource( RouterRegistrySourceInterface $source ): self
@@ -136,22 +151,22 @@ class Server
 		return $this;
 	}
 
-	public function getRouter()
+	public function getRouter(): Router
 	{
 		return $this->context->getRouter();
 	}
 
-	public function getRequest()
+	public function getRequest(): HttpRequest
 	{
 		return $this->context->getRequest();
 	}
 
-	public function getResponse()
+	public function getResponse(): HttpResponse
 	{
 		return $this->context->getResponse();
 	}
 
-	public function getContext()
+	public function getContext(): Context
 	{
 		return $this->context;
 	}
@@ -162,7 +177,7 @@ class Server
 			$this->context->getResponse()->setStatus( 404 );
 			$result		= 'No content found for this route.';
 		}
-		else if( $e instanceof \OutOfRangeException ){
+		else if( $e instanceof OutOfRangeException ){
 			$this->context->getResponse()->setStatus( 404 );
 		}
 		else{
@@ -175,7 +190,7 @@ class Server
 		return $e->getMessage();
 	}
 
-	public function handleError( int $code, string $message, string $file, int $line )
+	public function handleError( int $code, string $message, string $file, int $line ): void
 	{
 		Log::error( $message );
 		$this->log( 500 );
@@ -186,7 +201,7 @@ class Server
 		exit;
 	}
 
-	public function handleFatalError()
+	public function handleFatalError(): void
 	{
 		$error	= error_get_last();
 		if( is_null( $error ) )
@@ -203,19 +218,23 @@ class Server
 	/**
 	 *	@todo		abstract logging - use logger interface
 	 */
-	public function handleRequest()
+	public function handleRequest(): void
 	{
 		$path		= $this->context->getRequest()->getPath();
 		$method		= $this->context->getRequest()->getMethod();
 		Log::debug( 'REST Server: handleRequest: path => '.$path );
 
-		if( strpos( $path, '#' ) !== FALSE ){
-			$fragment	= substr( $path, strpos( $path, '#' ) + 1 );			//  @todo fragment is unused atm, just cut off
-			$path		= substr( $path, 0, strpos( $path, '#' ) );
+		if( str_contains( $path, '#' ) ){
+			/** @var int $position */
+			$position	= strpos( $path, '#' );
+			$fragment	= substr( $path, $position + 1 );			//  @todo fragment is unused atm, just cut off
+			$path		= substr( $path, 0, $position );
 		}
-		if( strpos( $path, '?' ) !== FALSE ){
-			$parameters	= substr( $path, strpos( $path, '?' ) + 1 );			//  @todo $parameters is unused atm, just cut off
-			$path		= substr( $path, 0, strpos( $path, '?' ) );
+		if( str_contains( $path, '?' ) ){
+			/** @var int $position */
+			$position	= strpos( $path, '?' );
+			$parameters	= substr( $path, $position + 1 );			//  @todo $parameters is unused atm, just cut off
+			$path		= substr( $path, 0, $position );
 		}
 		try{
 			$this->context->getRouter()->setMethod( $method );
@@ -233,7 +252,7 @@ class Server
 			$this->context->getResponse()->setBody( $content.$buffer );
 			ResponseSender::sendResponse( $this->context->getResponse(), NULL, FALSE );
 		}
-		catch( \Exception $e ){
+		catch( Exception $e ){
 			$this->log( 500 );
 			$text		= $this->handleException( $e ).'.';
 			$buffer		= ob_get_clean();
@@ -244,7 +263,7 @@ class Server
 		}
 	}
 
-	public function registerAccessCheck( string $className, string $method, array $options = array() ): self
+	public function registerAccessCheck( string $className, string $method, array $options = [] ): self
 	{
 		$this->accessChecks[]	= (object) [
 			'className'	=> $className,
@@ -262,9 +281,14 @@ class Server
 
 	/*  --  PROTECTED  --  */
 
-	protected function checkAccess( $route )
+	/**
+	 *	@param		Route		$route
+	 *	@return		void
+	 *	@throws		ReflectionException
+	 */
+	protected function checkAccess( Route $route ): void
 	{
-		if( !$this->accessChecks )
+		if( 0 === count( $this->accessChecks ) )
 			return;
 		foreach( $this->accessChecks as $accessCheck ){
 			ob_start();
@@ -272,7 +296,7 @@ class Server
 				$accessCheck->className,
 				$accessCheck->method,
 				[$this->context, $accessCheck->options],
-				array( $this->context->getRequest(), $route )
+				[$this->context->getRequest(), $route]
 			);
 			$buffer	= ob_get_clean();
 			if( strlen( trim( $error ) ) > 0 ){
@@ -286,15 +310,15 @@ class Server
 		}
 	}
 
-	protected function log( $status )
+	protected function log( $status ): void
 	{
-		$log	= array(
+		$log	= [
 			'date'		=> date( 'r' ),
 			'ip'		=> getenv( 'REMOTE_ADDR' ),
 			'method'	=> $this->context->getRequest()->getMethod(),
 			'path'		=> $this->context->getRequest()->getPath(),
 			'referer'	=> getenv( 'HTTP_REFERER' )
-		);
+		];
 //		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
 
@@ -304,7 +328,7 @@ class Server
 		$path			= $this->context->getRequest()->getPath();
 		Log::debug( '> path: '.$path );
 		$acceptHeader	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE );
-		if( $acceptHeader ){
+		if( NULL !== $acceptHeader ){
 			$accepts = $acceptHeader->getValue( TRUE );
 			Log::debug( '> accepts by request: '.json_encode( $accepts ) );
 			if( $this->options->forceMimeType ){
@@ -332,13 +356,18 @@ class Server
 				}
 			}
 		}
-		throw new \RuntimeException( 'Content type is not supported' );
+		throw new RuntimeException( 'Content type is not supported' );
 	}
 
-	protected function realizeResolvedRoute( Route $route )
+	/**
+	 *	@param		Route		$route
+	 *	@return		mixed
+	 *	@throws		ReflectionException
+	 */
+	protected function realizeResolvedRoute( Route $route ): mixed
 	{
 		if( !class_exists( $route->getController() ) )
-			throw new \RangeException( 'Class "'.$route->getController().'" is not existing' );
+			throw new RangeException( 'Class "'.$route->getController().'" is not existing' );
 		$object		= ObjectFactory::createObject( $route->getController(), array( $this->context ) );
 
 //  @todo handle exception in method calls
@@ -347,7 +376,7 @@ class Server
 		$result		= $factory->callMethod( $route->getAction(), $route->getArguments() );
 		//  @todo make handling of dev output configurable + log
 		if( $this->context->getBuffer()->has() ){
-			throw new \RuntimeException( $this->context->getBuffer()->get( TRUE ), 500 );
+			throw new RuntimeException( $this->context->getBuffer()->get( TRUE ), 500 );
 		}
 //}
 //catch( Exception $e ){}
@@ -360,15 +389,15 @@ class Server
 	* value in the second array, as array_merge does. I.e., with array_merge_recursive,
 	* this happens (documented behavior):
 	*
-	* array_merge_recursive(array('key' => 'org value'), array('key' => 'new value'));
-	*     => array('key' => array('org value', 'new value'));
+	* array_merge_recursive(['key' => 'org value'], ['key' => 'new value']);
+	*     => ['key' => ['org value', 'new value']];
 	*
 	* array_merge_recursive_distinct does not change the datatypes of the values in the arrays.
 	* Matching keys' values in the second array overwrite those in the first array, as is the
 	* case with array_merge, i.e.:
 	*
-	* array_merge_recursive_distinct(array('key' => 'org value'), array('key' => 'new value'));
-	*     => array('key' => array('new value'));
+	* array_merge_recursive_distinct(['key' => 'org value'], ['key' => 'new value']);
+	*     => ['key' => ['new value']];
 	*
 	* Parameters are passed by reference, though only for performance reasons. They're not
 	* altered by this function.
@@ -388,4 +417,4 @@ class Server
 		}
 		return $merged;
 	}
-};
+}

@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,15 +21,16 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST;
 
+use CeusMedia\Common\FS\Folder\Editor as FolderEditor;
+use CeusMedia\Common\Net\HTTP\Header\Parser as HttpHeaderParser;
 use CeusMedia\Router\Log;
-use FS_Folder_Editor as FolderEditor;
-use Net_HTTP_Header_Parser as HttpHeaderParser;
+use RuntimeException;
 
 /**
  *	...
@@ -36,7 +38,7 @@ use Net_HTTP_Header_Parser as HttpHeaderParser;
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
@@ -44,14 +46,14 @@ class Client
 {
 	protected $username;
 	protected $password;
-	protected $baseUri;
-	protected $expectedFormat;
-	protected $options			= array();
-	protected $requestHeaders	= array();
-	protected $responseHeader;
-	protected $setCurlOptions	= array();
-	protected $logErrors;
-	protected $logRequests;
+	protected string $baseUri;
+	protected ?string $expectedFormat	= NULL;
+	protected array $options			= [];
+	protected array $requestHeaders		= [];
+	protected string $responseHeader	= '';
+	protected array $setCurlOptions		= [];
+	protected ?string $logErrors		= NULL;
+	protected ?string $logRequests		= NULL;
 	protected $handler;
 
 	/**
@@ -61,11 +63,11 @@ class Client
 	 *	@param		array		$options		Map of connection options
 	 *	@return		void
 	 */
-	public function __construct( string $baseUri, array $options = array() )
+	public function __construct( string $baseUri, array $options = [] )
 	{
 		if( !extension_loaded( 'curl' ) )
-			throw new \RuntimeException( "Support for cURL is missing" );
-		$this->options	= array() + $options;
+			throw new RuntimeException( "Support for cURL is missing" );
+		$this->options	= [] + $options;
 		$this->baseUri	= $baseUri;
 		$this->handler	= curl_init();
 
@@ -95,9 +97,9 @@ class Client
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
 	 *	@param		array		$parameters		Map of GET parameters
-	 *	@return		mixed
+	 *	@return		object|array|string
 	 */
-	public function get( string $path, array $parameters = array() )
+	public function get( string $path, array $parameters = [] ): object|array|string
 	{
 		if( count( $parameters ) > 0 )
 			$path	.= "?".$this->buildPostFields( $parameters );
@@ -111,9 +113,9 @@ class Client
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
 	 *	@param		array		$data			Map of POST parameters
-	 *	@return		mixed
+	 *	@return		object|array|string
 	 */
-	public function post( string $path, array $data = array() )
+	public function post( string $path, array $data = [] ): object|array|string
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'POST' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -126,9 +128,9 @@ class Client
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
 	 *	@param		array		$data			Map of PUT parameters
-	 *	@return		mixed
+	 *	@return		object|array|string
 	 */
-	public function put( string $path, array $data = array() )
+	public function put( string $path, array $data = [] ): object|array|string
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'PUT' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
@@ -140,9 +142,9 @@ class Client
 	 *	Remove resource on server.
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
-	 *	@return		mixed
+	 *	@return		object|array|string
 	 */
-	public function delete( string $path )
+	public function delete( string $path ): object|array|string
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'DELETE' );
 		$this->setCurlOption( CURLOPT_URL, $this->baseUri.$path );
@@ -199,7 +201,7 @@ class Client
 	/**
 	 *	@todo	handle inputs like int, float etc
 	 */
-	protected function buildPostFields( $data ): string
+	protected function buildPostFields( object|array|string $data ): string
 	{
 		if( is_string( $data ) )
 			return $data;
@@ -216,7 +218,13 @@ class Client
 		return '';
 	}
 
-	protected function callbackHeaderFunction( $handler, $header )
+	/**
+	 * @param $handler
+	 * @param string $header
+	 * @return int
+	 * @todo implement
+	 */
+	protected function callbackHeaderFunction( $handler, string $header ): int
 	{
 		$this->responseHeader	.= $header;
 		return strlen( $header );
@@ -228,7 +236,7 @@ class Client
 	 *	@param		integer		$key		CURL option key (constant)
 	 *	@return		mixed|NULL
 	 */
-	protected function getCurlOption( int $key )
+	protected function getCurlOption( int $key ): mixed
 	{
 		if( isset( $this->setCurlOptions[$key] ) )
 			return $this->setCurlOptions[$key];
@@ -238,10 +246,10 @@ class Client
 	/**
 	 *	...
 	 *	@access		protected
-	 *	@return		mixed
+	 *	@return		object|array|string
 	 *	@todo		handle HTML
 	 */
-	protected function handleRequest()
+	protected function handleRequest(): object|array|string
 	{
 		$this->responseHeader	= '';
 		$headers	= $this->requestHeaders;
@@ -276,7 +284,7 @@ class Client
 
 		$responseHeaderFields	= HttpHeaderParser::parse( $this->responseHeader );
 
-		$links		= array();
+		$links		= [];
 		foreach( $responseHeaderFields->getFieldsByName( 'Link' ) as $link ){
 			$value	= $link->getValue();
 /*			if( preg_match( "/;rel=[^;])/", $value ) ){}*/
@@ -312,7 +320,7 @@ class Client
 	 */
 	protected function logRequest(): self
 	{
-		if( $this->logRequests ){
+		if( NULL !== $this->logRequests ){
 			$info		= curl_getinfo( $this->handler );
 			$message	= sprintf(
 				'%s %s %d %s',
@@ -334,7 +342,7 @@ class Client
 	 *	@param		mixed		$value		Value of CURL option to set
 	 *	@return		self
 	 */
-	protected function setCurlOption( int $key, $value ): self
+	protected function setCurlOption( int $key, mixed $value ): self
 	{
 		$this->setCurlOptions[$key]	= $value;
 		curl_setopt( $this->handler, $key, $value );

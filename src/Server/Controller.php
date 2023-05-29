@@ -2,7 +2,7 @@
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  *	@category		Library
  *	@package		CeusMedia_REST_Server
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
@@ -32,15 +32,15 @@ namespace CeusMedia\REST\Server;
  *	@category		Library
  *	@package		CeusMedia_REST_Server
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class Controller
 {
-	protected $resources;
+	protected Context $resources;
 
-	public function __construct( $context )
+	public function __construct( Context $context )
 	{
 		$this->resources	= $context;
 	}
@@ -48,11 +48,11 @@ class Controller
 	/**
 	 *	@see   		https://dzone.com/articles/rest-pagination-spring
 	 */
-	protected function decoratePagination( $total, $limit, $page, $parameters = array() )
+	protected function decoratePagination( int $total, int $limit, int $page, array $parameters = [] ): void
 	{
 		$response	= $this->resources->getResponse();
 		$path	= $this->resources->getRequest()->getPath();
-		if( $limit && $limit < $total ){
+		if( 0 !== $limit && $limit < $total ){
 			$lastPage	= ceil( $total / $limit );
 			if( $page > 1 ){
 				$args	= array_diff_key( $parameters, array( 'limit' => 1, 'page' => 1 ) );

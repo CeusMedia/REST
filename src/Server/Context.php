@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,16 +21,17 @@
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server;
 
+use CeusMedia\Common\ADT\Collection\Dictionary;
 use CeusMedia\Router\Router as Router;
-use Net_HTTP_Request as HttpRequest;
-use Net_HTTP_Response as HttpResponse;
-use UI_OutputBuffer as OutputBuffer;
+use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
+use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
+use CeusMedia\Common\UI\OutputBuffer as OutputBuffer;
 
 /**
  *	...
@@ -37,16 +39,16 @@ use UI_OutputBuffer as OutputBuffer;
  *	@category		Library
  *	@package		CeusMedia_REST
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class Context extends \ADT_List_Dictionary
+class Context extends Dictionary
 {
-	protected $request;
-	protected $response;
-	protected $router;
-	protected $buffer;
+	protected HttpRequest $request;
+	protected HttpResponse $response;
+	protected Router $router;
+	protected OutputBuffer $buffer;
 
 	public function __construct()
 	{

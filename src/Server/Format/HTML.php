@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
- *	Copyright (c) 2007-2020 Christian Würker (ceusmedia.de)
+ *	Copyright (c) 2007-2023 Christian Würker (ceusmedia.de)
  *
  *	This program is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -20,11 +21,14 @@
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\Format;
+
+use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
+use RuntimeException;
 
 /**
  *	...
@@ -32,32 +36,38 @@ namespace CeusMedia\REST\Server\Format;
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2020 Christian Würker
+ *	@copyright		2007-2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 class HTML implements FormatInterface
 {
-	public $contentType	= 'text/html';
+	public string $contentType	= 'text/html';
 
-	public $extension	= '.html';
+	public string $extension	= '.html';
 
-	public $mimeTypes	= array( 'text/html' );
+	public array $mimeTypes		= ['text/html'];
 
-	public function transform( $response, $content )
+	/**
+	 *	@param		HttpResponse			$response
+	 *	@param		object|array|string		$content
+	 *	@return		string
+	 */
+	public function transform( HttpResponse $response, object|array|string $content ): string
 	{
 		if( is_object( $content ) )
 			$content	= (string) $content;
 		if( is_array( $content ) )
 			$content	= $this->flattenArray( $content );
 		if( !is_string( $content ) )
-			throw new \RuntimeException( 'Content could not be transformed to string' );
+			throw new RuntimeException( 'Content could not be transformed to string' );
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return $content;
 	}
 
-	protected function flattenArray( & $array ){
-		$list	= array();
+	protected function flattenArray( array $array ): string
+	{
+		$list	= [];
 		foreach( $array as $item )
 			$list[]	= is_array( $item ) ? $this->flattenArray( $item ) : $item;
 		return join( $list );
