@@ -55,32 +55,32 @@ class Controller
 		if( 0 !== $limit && $limit < $total ){
 			$lastPage	= ceil( $total / $limit );
 			if( $page > 1 ){
-				$args	= array_diff_key( $parameters, array( 'limit' => 1, 'page' => 1 ) );
+				$args	= array_diff_key( $parameters, ['limit' => 1, 'page' => 1] );
 				$args	= count( $args ) > 0 ? '?'.http_build_query( $parameters ) : '';
 				$response->addHeaderPair( 'Link', $path.$args.'; rel=FIRST' );
 				if( $page < 3 )
 					$response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
 				else{
-					$args	= array_merge( $parameters, array(
+					$args	= array_merge( $parameters, [
 						'limit'	=> $limit,
 						'page'	=> $page - 1,
-					) );
+					] );
 					$args	= '?'.http_build_query( $args );
 					$response->addHeaderPair( 'Link', $path.$args.'; rel=PREV' );
 				}
 			}
 			if( $page < $lastPage ){
-				$args	= array_merge( $parameters, array(
+				$args	= array_merge( $parameters, [
 					'limit'	=> $limit,
 					'page'	=> $page + 1,
-				) );
+				] );
 				$args	= '?'.http_build_query( $args );
 				$response->addHeaderPair( 'Link', $path.$args.'; rel=NEXT' );
 
-				$args	= array_merge( $parameters, array(
+				$args	= array_merge( $parameters, [
 					'limit'	=> $limit,
 					'page'	=> $lastPage,
-				) );
+				] );
 				$args	= '?'.http_build_query( $args );
 				$response->addHeaderPair( 'Link', $path.$args.'; rel=LAST' );
 			}

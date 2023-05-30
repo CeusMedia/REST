@@ -41,10 +41,12 @@ use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
  */
 abstract class AbstractAccessCheck
 {
+	protected Context $context;
 	protected array $options	= [];
 
-	public function __construct( array $options = [] )
+	public function __construct( Context $context, array $options = [] )
 	{
+		$this->context	= $context;
 		$this->options	= $options;
 	}
 

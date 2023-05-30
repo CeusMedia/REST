@@ -3,12 +3,12 @@
 
 //$baseUri	= 'http://domain.tld/path/to/server/';
 //$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
-$baseUri	= 'http://localhost/lib/GitHub/CeusMedia/REST/demo/Server/';
+$baseUri	= 'http://localhost:1080/lib/GitHub/CeusMedia/REST/demo/Server/';
 
 $authUsername	= "";
 $authPassword	= "";
 
-$isConsole	= !getEnv( 'HTTP_HOST' );
+$isConsole	=  FALSE === getenv( 'HTTP_HOST' );
 
 if( !$isConsole )
 	ob_start();
@@ -91,8 +91,8 @@ catch( \Exception $e ){
 		</div>
 	</div>
 </div>';
-	$page	= new UI_HTML_PageFrame();
-	$page->setBaseHref( 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'SCRIPT_NAME' ) ).'/' );
+	$page	= new \CeusMedia\Common\UI\HTML\PageFrame();
+	$page->setBaseHref( 'http://'.getenv( 'SERVER_NAME' ).':'.getenv( 'SERVER_PORT' ).dirname( getenv( 'SCRIPT_NAME' ) ).'/' );
 	$page->addStylesheet( 'https://cdn.ceusmedia.de/css/bootstrap.min.css' );
 	$page->addStylesheet( 'https://cdn.ceusmedia.de/fonts/FontAwesome/font-awesome.min.css' );
 	$page->addJavaScript( 'https://cdn.ceusmedia.de/js/jquery/1.10.2.min.js' );

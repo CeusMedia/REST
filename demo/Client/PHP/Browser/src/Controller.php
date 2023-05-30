@@ -1,24 +1,31 @@
-<?php
-abstract class Controller{
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
 
-	protected $baseUri;
-	protected $client;
-	protected $request;
+use CeusMedia\Common\ADT\Collection\Dictionary;
+use CeusMedia\Common\Net\HTTP\Request\Receiver as Request;
+use CeusMedia\REST\Client as Client;
 
-	public function __construct( $client, $request ){
+abstract class Controller
+{
+
+	protected string $baseUri;
+	protected Client $client;
+	protected Request $request;
+
+	public function __construct( Client $client, Request $request )
+	{
 		$this->client	= $client;
 		$this->request	= $request;
 
-		$host	= getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' );
-		$path	= dirname( getEnv( 'SCRIPT_NAME' ) ).'/';
+		$host	= getenv( 'SERVER_NAME' ).':'.getenv( 'SERVER_PORT' );
+		$path	= dirname( getenv( 'SCRIPT_NAME' ) ).'/';
 		$this->baseUri	= 'http://'.$host.$path;
 	}
 
-	protected function redirect( $uri = NULL ){
+	protected function redirect( ?string $uri = NULL ): void
+	{
 		header( 'Location: '.$this->baseUri.$uri );
 		exit;
 	}
 
-	abstract public function handle( ADT_List_Dictionary $arguments );
+	abstract public function handle( Dictionary $arguments );
 }
-?>

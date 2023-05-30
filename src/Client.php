@@ -30,6 +30,7 @@ namespace CeusMedia\REST;
 use CeusMedia\Common\FS\Folder\Editor as FolderEditor;
 use CeusMedia\Common\Net\HTTP\Header\Parser as HttpHeaderParser;
 use CeusMedia\Router\Log;
+use CurlHandle;
 use RuntimeException;
 
 /**
@@ -44,8 +45,6 @@ use RuntimeException;
  */
 class Client
 {
-	protected $username;
-	protected $password;
 	protected string $baseUri;
 	protected ?string $expectedFormat	= NULL;
 	protected array $options			= [];
@@ -54,7 +53,7 @@ class Client
 	protected array $setCurlOptions		= [];
 	protected ?string $logErrors		= NULL;
 	protected ?string $logRequests		= NULL;
-	protected $handler;
+	protected CurlHandle $handler;
 
 	/**
 	 *	Constructor.
@@ -69,9 +68,14 @@ class Client
 			throw new RuntimeException( "Support for cURL is missing" );
 		$this->options	= [] + $options;
 		$this->baseUri	= $baseUri;
-		$this->handler	= curl_init();
 
-		$callbackHeaderFunction	= array( $this, 'callbackHeaderFunction' );
+		/** @var CurlHandle|FALSE $curlHandle */
+		$curlHandle		= curl_init();
+		if( FALSE === $curlHandle )
+			throw new RuntimeException( "Creating a cURL handle failed" );
+
+		$this->handler			= $curlHandle;
+		$callbackHeaderFunction	= [$this, 'callbackHeaderFunction'];
 		$this->setCurlOption( CURLOPT_HEADER, FALSE );
 		$this->setCurlOption( CURLOPT_RETURNTRANSFER, TRUE );
 		$this->setCurlOption( CURLOPT_HEADERFUNCTION, $callbackHeaderFunction );
@@ -80,7 +84,7 @@ class Client
 		}
 	}
 
-	public function addRequestHeader( string $key, $value ): self
+	public function addRequestHeader( string $key, int|float|string $value ): self
 	{
 		$this->requestHeaders[]	= $key.": ".$value;
 		return $this;
@@ -219,12 +223,11 @@ class Client
 	}
 
 	/**
-	 * @param $handler
-	 * @param string $header
-	 * @return int
-	 * @todo implement
+	 *	@param		CurlHandle		$handler
+	 *	@param		string			$header
+	 *	@return		int
 	 */
-	protected function callbackHeaderFunction( $handler, string $header ): int
+	protected function callbackHeaderFunction( CurlHandle $handler, string $header ): int
 	{
 		$this->responseHeader	.= $header;
 		return strlen( $header );
@@ -295,17 +298,17 @@ class Client
 			case 'HTML':
 				break;
 			case 'JSON':
-				$body	= (object) array(
+				$body	= (object) [
 					'data'		=> json_decode( $body ),
 	//				'headers'	=> $headers->getFields
 					'links'		=> $links,
-				);
+				];
 				break;
 			case 'PHP':
-				$body	= array(
+				$body	= [
 					'data'	=> unserialize( $body ),
 					'links'	=> $links,
-				);
+				];
 				break;
 			default:
 				return $body;

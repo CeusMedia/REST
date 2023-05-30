@@ -1,26 +1,30 @@
-<?php
-class View_Test_Index extends View{
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
 
-	public function render(){
+use CeusMedia\Common\UI\HTML\Elements as HtmlElements;
+use CeusMedia\Common\UI\HTML\Tag as HtmlTag;
+class View_Test_Index extends View
+{
+	public function render(): string
+	{
 		$items	= $this->get( 'items' );
 		$rows	= array();
 		foreach( $items as $item ){
-			$buttonEdit	= UI_HTML_Tag::create( 'a', '<i class="fa fa-pencil"></i> edit', array(
+			$buttonEdit	= HtmlTag::create( 'a', '<i class="fa fa-pencil"></i> edit', array(
 				'class'		=> 'btn btn-small',
-				'href'		=> 'Test/'.$item['id'].'/edit',
+				'href'		=> 'Test/'.$item->id.'/edit',
 			) );
-			$modifiedAt		= $item['modifiedAt'] ? $item['modifiedAt'] : $item['createdAt'];
-			$rows[]	= UI_HTML_Tag::create( 'tr', array(
-				UI_HTML_Tag::create( 'td', $item['id'] ),
-				UI_HTML_Tag::Create( 'td', date( 'Y-m-d H:i:s', (float) $modifiedAt ) ),
-				UI_HTML_Tag::create( 'td', $item['views'] ),
-				UI_HTML_Tag::create( 'td', '<div class="btn-group">'.$buttonEdit.'</div>' ),
+			$modifiedAt		= $item->modifiedAt ? $item->modifiedAt : $item->createdAt;
+			$rows[]	= HtmlTag::create( 'tr', array(
+				HtmlTag::create( 'td', $item->id ),
+				HtmlTag::Create( 'td', date( 'Y-m-d H:i:s', (float) $modifiedAt ) ),
+				HtmlTag::create( 'td', $item->views ),
+				HtmlTag::create( 'td', '<div class="btn-group">'.$buttonEdit.'</div>' ),
 			) );
 		}
-		$colgroup	= UI_HTML_Elements::ColumnGroup( array( '100', '', '60', '100' ) );
-		$thead	= UI_HTML_Tag::create( 'thead', UI_HTML_Elements::TableHeads( array( 'ID', 'Modification', 'Views', '' ) ) );
-		$tbody	= UI_HTML_Tag::create( 'tbody', $rows );
-		$table	= UI_HTML_Tag::create( 'table', $colgroup.$thead.$tbody, array( 'class' => 'table table-striped' ) );
+		$colgroup	= HtmlElements::ColumnGroup( array( '100', '', '60', '100' ) );
+		$thead	= HtmlTag::create( 'thead', HtmlElements::TableHeads( array( 'ID', 'Modification', 'Views', '' ) ) );
+		$tbody	= HtmlTag::create( 'tbody', $rows );
+		$table	= HtmlTag::create( 'table', $colgroup.$thead.$tbody, array( 'class' => 'table table-striped' ) );
 
 		$content	= '
 <div class="content-panel">

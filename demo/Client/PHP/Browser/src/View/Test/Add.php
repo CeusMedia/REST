@@ -1,7 +1,8 @@
 <?php
-class View_Test_Add extends View{
-
-	public function render(){
+class View_Test_Add extends View
+{
+	public function render(): string
+	{
 		$content	= '
 <div class="content-panel">
 	<h3><span class="muted">Test:</span> Add</h3>

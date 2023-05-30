@@ -35,6 +35,7 @@ use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
 use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
 use CeusMedia\Common\Net\HTTP\Response\Sender as ResponseSender;
 use CeusMedia\REST\Server\Context;
+use CeusMedia\REST\Server\Format\FormatInterface;
 use CeusMedia\Router\Log;
 use CeusMedia\Router\ResolverException as ResolverException;
 use CeusMedia\Router\Registry\Source\SourceInterface as RouterRegistrySourceInterface;
@@ -43,6 +44,7 @@ use CeusMedia\Router\Registry\Source\JsonFolder as RouterRegistrySourceJsonFolde
 use CeusMedia\Router\Route;
 use CeusMedia\Router\Router;
 use Exception;
+use JetBrains\PhpStorm\NoReturn;
 use OutOfRangeException;
 use RangeException;
 use ReflectionException;
@@ -61,7 +63,7 @@ use Throwable;
  */
 class Server
 {
-	protected object $options;
+	protected Dictionary $options;
 
 	protected array $defaultOptions	= [
 		'classContext'		=> Server\Context::class,
@@ -81,6 +83,7 @@ class Server
 		],
 	];
 
+	/** @var FormatInterface[] array  */
 	protected array $formats		= [];
 
 	protected Context $context;
@@ -93,13 +96,17 @@ class Server
 	 */
 	public function __construct( array $options = [] )
 	{
-		Log::debug( 'REST Server: Construction' );
-		$this->options	= (object) $this->mergeOptions( $this->defaultOptions, $options );
-//		Log::debug( '> Options: ', $this->options );
-		Log::debug( '> Context Class: '.$this->options->classContext );
-		$this->context	= ObjectFactory::createObject( $this->options->classContext );
+		if( FALSE === getenv( 'HTTP_HOST' ) )
+			throw new RuntimeException( 'Server can only run in an HTTP environment' );
 
-		$accessControl			= new Dictionary( $this->options->accessControl );
+		Log::debug( 'REST Server: Construction' );
+		$this->options	= new Dictionary( $this->mergeOptions( $this->defaultOptions, $options ) );
+//		Log::debug( '> Options: ', $this->options->getAll() );
+		Log::debug( '> Context Class: '.$this->options->get( 'classContext' ) );
+		/** @var Context $context */
+		$context			= ObjectFactory::createObject( $this->options->get( 'classContext' ) );
+		$this->context		= $context;
+		$accessControl			= new Dictionary( $this->options->get( 'accessControl' ) );
 		$accessControlSettings	= [
 			'allowOrigin'	=> 'Access-Control-Allow-Origin',
 			'allowMethods'	=> 'Access-Control-Allow-Methods',
@@ -117,25 +124,32 @@ class Server
 			}
 		}
 
-		if( isset( $this->options->routesFile ) ){
-			if( strlen( trim( $this->options->routesFile ) ) > 0 ){
-				$source	= new RouterRegistrySourceJsonFile( $this->options->routesFile );
+		if( NULL !== $this->options->get( 'routesFile' ) ){
+			$pathName	= trim( $this->options->get( 'routesFile' ) );
+			if( 0 !== strlen( $pathName ) ){
+				$source	= new RouterRegistrySourceJsonFile( $pathName );
 				$this->getRouter()->getRegistry()->addSource( $source );
 			}
 		}
 
-		if( isset( $this->options->routesFolder ) ){
-			if( strlen( trim( $this->options->routesFolder ) ) > 0 ){
-				$source	= new RouterRegistrySourceJsonFolder( $this->options->routesFolder );
+		if( NULL !== $this->options->get( 'routesFolder' ) ){
+			$pathName	= trim( $this->options->get( 'routesFolder' ) );
+			if( 0 !== strlen( $pathName ) ){
+				$source	= new RouterRegistrySourceJsonFolder( $pathName );
 				$this->getRouter()->getRegistry()->addSource( $source );
 			}
 		}
 
-		foreach( $this->options->formats as $format => $active ){
+		/**
+		 * @var string $format
+		 * @var bool $active
+		 */
+		foreach( $this->options->get( 'formats' ) as $format => $active ){
 			if( $active ){
-//				print_m( class_exists( 'Format\\'.$format ) );die;
-//				$object	= ObjectFactory::createObject( '\\CeusMedia\\Router\\Server\\Format\\'.$format );
-				$object	= ObjectFactory::createObject( __NAMESPACE__.'\\Server\\Format\\'.$format );
+				if( !str_starts_with( $format, '\\' ) )
+					$format	= __NAMESPACE__.'\\Server\\Format\\'.$format;
+				/** @var FormatInterface $object */
+				$object	= ObjectFactory::createObject( $format );
 				$this->formats[$format] = $object;
 				Log::debug( '> support format: '.$format );
 			}
@@ -190,17 +204,29 @@ class Server
 		return $e->getMessage();
 	}
 
+	/**
+	 *	Will exit with 2 (error).
+	 *	@param		int			$code
+	 *	@param		string		$message
+	 *	@param		string		$file
+	 *	@param		int			$line
+	 *	@return		void
+	 */
 	public function handleError( int $code, string $message, string $file, int $line ): void
 	{
 		Log::error( $message );
-		$this->log( 500 );
+		$this->log( 500, $code );
 		$this->context->getBuffer()->close();
 		$this->context->getResponse()->setStatus( 500 );
 		$this->context->getResponse()->setBody( '<h1>Internal Server Error</h1><p>Error: '.$message.' in '.$file.' at line '.$line );
 		ResponseSender::sendResponse( $this->context->getResponse() );
-		exit;
+		exit( 2 );
 	}
 
+	/**
+	 *	Will exit with 1 (fatal error).
+	 *	@return	void
+	 */
 	public function handleFatalError(): void
 	{
 		$error	= error_get_last();
@@ -212,7 +238,7 @@ class Server
 		$this->context->getResponse()->setStatus( 500 );
 		$this->context->getResponse()->setBody( $error['message'] );
 		ResponseSender::sendResponse( $this->context->getResponse() );
-		exit;
+		exit( 1 );
 	}
 
 	/**
@@ -263,6 +289,12 @@ class Server
 		}
 	}
 
+	/**
+	 *	@param		string		$className
+	 *	@param		string		$method
+	 *	@param		array		$options
+	 *	@return		self
+	 */
 	public function registerAccessCheck( string $className, string $method, array $options = [] ): self
 	{
 		$this->accessChecks[]	= (object) [
@@ -273,7 +305,7 @@ class Server
 		return $this;
 	}
 
-	public function setResource( string $key, $object ): self
+	public function setResource( string $key, object $object ): self
 	{
 		$this->context->set( $key, $object );
 		return $this;
@@ -290,6 +322,7 @@ class Server
 	{
 		if( 0 === count( $this->accessChecks ) )
 			return;
+//		print_m($this->accessChecks);die;
 		foreach( $this->accessChecks as $accessCheck ){
 			ob_start();
 			$error	= MethodFactory::staticCallClassMethod(
@@ -310,11 +343,18 @@ class Server
 		}
 	}
 
-	protected function log( $status ): void
+	/**
+	 *	@param		int			$status
+	 *	@param		int|NULL	$code
+	 *	@return		void
+	 */
+	protected function log( int $status, ?int $code = NULL ): void
 	{
 		$log	= [
 			'date'		=> date( 'r' ),
 			'ip'		=> getenv( 'REMOTE_ADDR' ),
+			'status'	=> $status,
+			'code'		=> $code ?? '-',
 			'method'	=> $this->context->getRequest()->getMethod(),
 			'path'		=> $this->context->getRequest()->getPath(),
 			'referer'	=> getenv( 'HTTP_REFERER' )
@@ -322,41 +362,59 @@ class Server
 //		error_log( json_encode( $log )."\n", 3, __DIR__."/log/routes.log" );
 	}
 
-	protected function negotiateResponseFormat()
+	/**
+	 *	@param		array		$accepts
+	 *	@return		FormatInterface|NULL
+	 */
+	protected function matchAcceptsWithFormats( array $accepts ): ?FormatInterface
+	{
+		foreach( $accepts as $mimeType => $quality ){
+			foreach( $this->formats as $format ){
+				if( in_array( $mimeType, $format->getMimeTypes(), TRUE ) ){
+					Log::debug( '> matched format: '.$mimeType );
+					return $format;
+				}
+			}
+		}
+		return NULL;
+	}
+
+	/**
+	 *	@return		FormatInterface
+	 */
+	protected function negotiateResponseFormat(): FormatInterface
 	{
 		Log::debug( 'REST Server: negotiateResponseFormat' );
 		$path			= $this->context->getRequest()->getPath();
 		Log::debug( '> path: '.$path );
+		/** @var HeaderField|NULL $acceptHeader */
 		$acceptHeader	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE );
-		if( NULL !== $acceptHeader ){
-			$accepts = $acceptHeader->getValue( TRUE );
-			Log::debug( '> accepts by request: '.json_encode( $accepts ) );
-			if( $this->options->forceMimeType ){
-				$accepts	= array( $this->options->forceMimeType => 1 );
-				Log::debug( '> accepts by force: '.json_encode( $accepts ) );
-			}
+		if( NULL === $acceptHeader )
+			throw new RuntimeException( 'No accept header set' );
 
-			if( preg_match( '/\.\w+$/', $path ) === 0 ){
-				foreach( $this->formats as $format ){
-					$extension	= preg_quote( $format->extension, '/' );
-					if( preg_match( '/'.$extension.'$/', $path ) === 1 ){
-						$accepts	= array( $format->mimeTypes[0] => 1 );
-						Log::debug( '> accepts by extension: '.json_encode( $accepts ) );
-					}
-				}
-			}
+		/** @var array $accepts */
+		$accepts	= $acceptHeader->getValue( TRUE );
+		Log::debug( '> accepts by request: '.json_encode( $accepts ) );
+		if( '' !== $this->options->get( 'forceMimeType', '' ) ){
+			$accepts	= [$this->options->get( 'forceMimeType' ) => 1];
+			Log::debug( '> accepts by force: '.json_encode( $accepts ) );
+		}
 
-			Log::debug( '> accepts finally: '.json_encode( $accepts ) );
-			foreach( $accepts as $mimeType => $quality ){
-				foreach( $this->formats as $format ){
-					if( in_array( $mimeType, $format->mimeTypes, TRUE ) ){
-						Log::debug( '> final format: '.$mimeType );
-						return $format;
-					}
+		if( preg_match( '/\.\w+$/', $path ) === 0 ){
+			foreach( $this->formats as $format ){
+				$extension	= preg_quote( $format->getExtension(), '/' );
+				if( preg_match( '/'.$extension.'$/', $path ) === 1 ){
+					$accepts	= [$format->getMimeTypes()[0] => 1];
+					Log::debug( '> accepts by extension: '.json_encode( $accepts ) );
 				}
 			}
 		}
-		throw new RuntimeException( 'Content type is not supported' );
+		Log::debug( '> accepts finally: '.json_encode( $accepts ) );
+
+		$format	= $this->matchAcceptsWithFormats( $accepts );
+		if( NULL === $format )
+			throw new RuntimeException( 'Content type is not supported (no acceptable format found)' );
+		return $format;
 	}
 
 	/**
@@ -368,7 +426,7 @@ class Server
 	{
 		if( !class_exists( $route->getController() ) )
 			throw new RangeException( 'Class "'.$route->getController().'" is not existing' );
-		$object		= ObjectFactory::createObject( $route->getController(), array( $this->context ) );
+		$object		= ObjectFactory::createObject( $route->getController(), [$this->context] );
 
 //  @todo handle exception in method calls
 //try{
@@ -410,10 +468,10 @@ class Server
 	*/
 	protected function mergeOptions( array &$array1, array &$array2 ): array
 	{
-		$merged = $array1;
+		$merged	= $array1;
 		foreach( $array2 as $key => &$value ){
-			$isNest	= is_array( $value ) && isset( $merged[$key] ) && is_array( $merged[$key] );
-			$merged[$key] = $isNest ? $this->mergeOptions( $merged[$key], $value ) : $value;
+			$isNest			= is_array( $value ) && isset( $merged[$key] ) && is_array( $merged[$key] );
+			$merged[$key]	= $isNest ? $this->mergeOptions( $merged[$key], $value ) : $value;
 		}
 		return $merged;
 	}

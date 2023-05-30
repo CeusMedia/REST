@@ -41,7 +41,7 @@ use const JSON_PRETTY_PRINT;
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class JSON implements FormatInterface
+class JSON extends AbstractFormat implements FormatInterface
 {
 	public string $contentType	= 'application/json';
 

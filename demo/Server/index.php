@@ -10,8 +10,8 @@ use \CeusMedia\Router\Log;
 //  --  SETUP  --  //
 error_reporting( E_ALL );
 ini_set( 'display_errors', 'On' );
-\Loader::registerNew( 'php', NULL, './src/' );
-new UI_DevOutput;
+\CeusMedia\Common\Loader::registerNew( 'php', NULL, './src/' );
+new \CeusMedia\Common\UI\DevOutput;
 
 //  --  LOGGING  --  //
 Log::$level	= Log::LEVEL_ALL;
@@ -23,12 +23,12 @@ register_shutdown_function( function(){
 });*/
 
 //  --  SERVER  --  //
-$options	= array(
-//	'forceMimeType' => 'application/json',
+$options	= [
+	'forceMimeType' => 'application/json',
 //	'routesFile'	=> 'routes.json',
-);
+];
 $server	= new Server( $options );
 $server->addRouterRegistrySource( new JsonFileRegistrySource( 'routes.json' ) );
 //$server->registerAccessCheck( AccessCheckUser::CLASS, 'perform' );
-$server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => ['127.0.0.0']] );
+$server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => ['127.0.0.1']] );
 $server->handleRequest();

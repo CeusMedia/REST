@@ -28,7 +28,9 @@
 namespace CeusMedia\REST\Server\AccessCheck;
 
 use CeusMedia\Common\FS\File\JSON\Reader as JsonReader;
+use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\REST\Server\Context;
 use CeusMedia\Router\Log;
 
 /**
@@ -43,15 +45,15 @@ use CeusMedia\Router\Log;
  */
 class User extends AbstractAccessCheck
 {
-	public function __construct( array $options = [] )
+	public function __construct( Context $context, array $options = [] )
 	{
-		$defaultOptions = array(
+		$defaultOptions = [
 			'filePath'	=> 'users.json',
-		);
-		parent::__construct( array_merge( $defaultOptions, $options ) );
+		];
+		parent::__construct( $context, array_merge( $defaultOptions, $options ) );
 	}
 
-	public function perform( $request ): string
+	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: User: perform' );
 		if( file_exists( $this->options['filePath'] ) ){
@@ -62,10 +64,10 @@ class User extends AbstractAccessCheck
 					unset( $value['disabled'] );
 					$value['enabled']	= false;
 				}
-				$users[$key]	= (object) array_merge( array(
+				$users[$key]	= (object) array_merge( [
 					'password'	=> '',
 					'enabled'	=> true,
-				), $value );
+				], $value );
 			}
 			$givenUsername	= trim( $_SERVER['PHP_AUTH_USER'] ?? '' );
 			$givenPassword	= trim( $_SERVER['PHP_AUTH_PW'] ?? '' );

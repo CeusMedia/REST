@@ -1,31 +1,41 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
 
+use CeusMedia\Common\ADT\Collection\Dictionary;
+use CeusMedia\Common\Alg\Obj\Factory as ObjectFactory;
+use CeusMedia\Common\FS\Folder\RecursiveLister as RecursiveFolderLister;
+use CeusMedia\Common\Net\HTTP\Request\Receiver as Request;
+use CeusMedia\Common\Net\HTTP\Response as Response;
+use CeusMedia\Common\Net\HTTP\Response\Sender as ResponseSender;
+use CeusMedia\Common\UI\HTML\Exception\View as ExceptionView;
+use CeusMedia\Common\UI\HTML\PageFrame as HtmlPage;
+use CeusMedia\Common\UI\HTML\Tag as HtmlTag;
 use CeusMedia\REST\Client as Client;
 use CeusMedia\Router\Router as Router;
-use Net_HTTP_Request_Receiver as Request;
-use Net_HTTP_Response as Response;
-use Net_HTTP_Response_Sender as ResponseSender;
-use UI_HTML_PageFrame as HtmlPage;
-use UI_HTML_Exception_View as ExceptionView;
-use UI_HTML_Tag as HtmlTag;
-use Alg_Object_Factory as ObjectFactory;
-use ADT_List_Dictionary as Dictionary;
 
 class Demo
 {
+	protected Client $client;
+
+	protected string $pathApp;
+
+	protected Request $request;
+
+	protected Response $response;
+
+	protected Router $router;
+
 	public function __construct()
 	{
-		$pathApp		= dirname( getEnv( 'SCRIPT_NAME' ) );
-		$pathServer		= dirname( dirname( dirname( $pathApp ) ) ).'/Server/';
-		$hostServer		= getEnv( 'SERVER_NAME' );
-		$portServer		= getEnv( 'SERVER_PORT' );
+		$pathApp		= dirname( getenv( 'SCRIPT_NAME' ) );
+		$pathServer		= dirname( $pathApp, 3 ).'/Server/';
+		$hostServer		= getenv( 'SERVER_NAME' );
+		$portServer		= getenv( 'SERVER_PORT' );
 		$baseUri		= 'http://'.$hostServer.':'.$portServer.$pathServer;
-		$this->client	= new Client( $baseUri );
-		$this->client->expectFormat( 'JSON' );
-		$this->client->expectFormat( 'PHP' );
 		$this->request	= new Request();
 		$this->response	= new Response();
 		$this->router	= new Router();
+		$this->client	= new Client( $baseUri );
+		$this->client->expectFormat( 'JSON' );
 		$this->router->setMethod( $this->request->getMethod()->get() );
 		$this->router->loadRoutesFromJsonFile( 'routes.json' );
 
@@ -40,13 +50,13 @@ class Demo
 		ResponseSender::sendResponse( $this->response );
 	}
 
-	protected function dispatch()
+	protected function dispatch(): string
 	{
 		$path	= $this->request->getPath();
 		$method	= $this->request->getMethod();
 		try{
 			$route		= $this->router->resolve( $path );
-			$parameters	= array( $this->client, $this->request );
+			$parameters	= [$this->client, $this->request];
 			$arguments	= new Dictionary( $route->getArguments() );
 			$controller	= ObjectFactory::createObject( $route->getController(), $parameters );
 			$result		= $controller->handle( $arguments );
@@ -65,7 +75,7 @@ class Demo
 		$classPath	= 'src/Controller/';
 
 		$list		= array();
-		$index		= FS_Folder_RecursiveLister::getFolderList( $classPath );
+		$index		= RecursiveFolderLister::getFolderList( $classPath );
 		foreach( $index as $entry ){
 			$topic	= substr( $entry->getPathname(), strlen( $classPath ) );
 			if( file_exists( $entry->getPathname().'/Index.php' ) ){
@@ -119,7 +129,7 @@ h2.project {
 </style>';
 
 		$page	= new HtmlPage();
-		$page->setBaseHref( 'http://'.getEnv( 'SERVER_NAME' ).':'.getEnv( 'SERVER_PORT' ).dirname( getEnv( 'SCRIPT_NAME' ) ).'/' );
+		$page->setBaseHref( 'http://'.getenv( 'SERVER_NAME' ).':'.getenv( 'SERVER_PORT' ).dirname( getenv( 'SCRIPT_NAME' ) ).'/' );
 		$page->addStylesheet( 'https://cdn.ceusmedia.de/css/bootstrap.min.css' );
 		$page->addStylesheet( 'https://cdn.ceusmedia.de/fonts/FontAwesome/font-awesome.min.css' );
 		$page->addJavaScript( 'https://cdn.ceusmedia.de/js/jquery/1.11.1.min.js' );

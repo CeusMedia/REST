@@ -1,8 +1,11 @@
 <?php
+
+use CeusMedia\Common\UI\HTML\PageFrame as HtmlPage;
+
 require_once '../../../vendor/autoload.php';
 
 //  try to detect installation
-$serverPath	= dirname( dirname( getEnv( 'REQUEST_URI' ) ) ).'/Server/';
+$serverPath	= dirname( dirname( getenv( 'REQUEST_URI' ) ) ).'/Server/';
 $serverUrl	= 'http://localhost:1080/'.$serverPath;
 //$serverUrl	= 'https://localhost:10443/'.$serverPath;
 //$serverUrl	= 'http://127.0.0.1:1080/'.$serverPath;
@@ -15,16 +18,18 @@ $app		= new JsApp( $serverUrl );
 
 class JsApp
 {
+	protected string $serverUrl;
+	protected HtmlPage $page;
 	public static $cdn	= 'https://cdn.ceusmedia.de/';
 
-	public function __construct( $serverUrl )
+	public function __construct( string $serverUrl )
 	{
 		$this->serverUrl	= $serverUrl;
-		$this->page	= new UI_HTML_PageFrame();
+		$this->page			= new HtmlPage();
 		$this->main();
 	}
 
-	private function main()
+	private function main(): void
 	{
 		$head	= '<script>
 jQuery(document).ready(function(){
@@ -78,7 +83,7 @@ jQuery(document).ready(function(){
 		print( $this->render() );
 	}
 
-	private function render()
+	private function render(): string
 	{
 		$this->page->addStylesheet( self::$cdn.'css/bootstrap.min.css' );
 		$this->page->addStylesheet( 'src/css/style.css' );

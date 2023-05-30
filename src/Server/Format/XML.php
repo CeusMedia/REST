@@ -39,7 +39,7 @@ use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class XML implements FormatInterface
+class XML extends AbstractFormat implements FormatInterface
 {
 	public string $contentType	= 'application/xhtml+xml';
 

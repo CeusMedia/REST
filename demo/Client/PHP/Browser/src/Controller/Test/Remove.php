@@ -1,11 +1,15 @@
 <?php
-class Controller_Test_Remove extends Controller{
 
-	public function handle( ADT_List_Dictionary $arguments ){
+use CeusMedia\Common\ADT\Collection\Dictionary;
+
+class Controller_Test_Remove extends Controller
+{
+	public function handle( Dictionary $arguments ): string
+	{
 		$id	= $arguments->get( 'id' );
 		if( !$id )
 			throw new RangeException( 'No valid ID given' );
-		if( $this->request->getMethod() === "POST" ){
+		if( $this->request->getMethod()->isPost() ){
 			$this->client->delete( 'test/'.$id );
 			$this->redirect( 'Test' );
 		}
@@ -15,4 +19,3 @@ class Controller_Test_Remove extends Controller{
 		return $view->render();
 	}
 }
-?>

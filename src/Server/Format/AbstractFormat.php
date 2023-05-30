@@ -21,13 +21,11 @@
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2023 Christian Würker
+ *	@copyright		2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
 namespace CeusMedia\REST\Server\Format;
-
-use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
 
 /**
  *	...
@@ -35,26 +33,41 @@ use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
  *	@category		Library
  *	@package		CeusMedia_REST_Server_Format
  *	@author			Christian Würker <christian.wuerker@ceusmedia.de>
- *	@copyright		2007-2023 Christian Würker
+ *	@copyright		2023 Christian Würker
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class PHP extends AbstractFormat implements FormatInterface
+
+
+abstract class AbstractFormat
 {
-	public string $contentType	= 'application/x-php';
+	public string $contentType	= '';
 
-	public string $extension	= '.php';
+	public string $extension	= '';
 
-	public array $mimeTypes		= ['application/x-php'];
+	public array $mimeTypes		= [];
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
 	 *	@return		string
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string
+	public function getContentType(): string
 	{
-		$response->addHeaderPair( 'Content-Type', $this->contentType );
-		return serialize( $content );
+		return $this->contentType;
+	}
+
+	/**
+	 *	@return		string
+	 */
+	public function getExtension(): string
+	{
+		return $this->extension;
+	}
+
+	/**
+	 *	@return		string[]
+	 */
+	public function getMimeTypes(): array
+	{
+		return $this->mimeTypes;
 	}
 }

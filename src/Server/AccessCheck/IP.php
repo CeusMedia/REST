@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
@@ -26,7 +27,9 @@
  */
 namespace CeusMedia\REST\Server\AccessCheck;
 
+use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\REST\Server\Context;
 use CeusMedia\Router\Log;
 
 /**
@@ -41,28 +44,30 @@ use CeusMedia\Router\Log;
  */
 class IP extends AbstractAccessCheck
 {
-	public function __construct( array $options = [] )
+	public function __construct( Context $context, array $options = [] )
 	{
 		$defaultOptions = [
 			'whitelist'	=> ['127.0.0.1', '::1'],
 			'blacklist'	=> [],
 		];
-		parent::__construct( array_merge( $defaultOptions, $options ) );
+		parent::__construct( $context, array_merge( $defaultOptions, $options ) );
 	}
 
-	public function perform( $request ): string
+	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: IP: perform' );
 		$ip		= $_SERVER['REMOTE_ADDR'];
 		Log::debug( '> IP: '.$ip );
-		if( preg_match( '/:/', $ip ) === 0 )
+		if( 0 !== preg_match( '/:/', $ip ) )
 			return $this->performV6( $ip );
 		return $this->performV4( $ip );
 	}
 
 	protected function performV4( string $ip ): string
 	{
+		Log::debug( '> check against V4 IP: '.$ip );
 		foreach( $this->options['whitelist'] as $allowed ){
+			Log::debug( '> ? '.$allowed );
 			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
 				return '';
 			else if( str_contains( $allowed, '/' ) ){
@@ -71,12 +76,12 @@ class IP extends AbstractAccessCheck
 				$x	= explode( '.', $allowed );
 				while( count( $x ) < 4 )
 					$x[]	= '0';
-				$rangeDecimal	= ip2long( vsprintf( "%u.%u.%u.%u", array(
+				$rangeDecimal	= ip2long( vsprintf( "%u.%u.%u.%u", [
 					(int) $x[0],
 					(int) $x[1],
 					(int) $x[2],
 					(int) $x[3]
-				) ) );
+				] ) );
 				$ipDecimal			= ip2long( $ip );
 				$wildcardDecimal	= pow( 2, ( 32 - (int) $netmask ) ) - 1;
 				$netmaskDecimal		= ~$wildcardDecimal;
@@ -90,6 +95,11 @@ class IP extends AbstractAccessCheck
 
 	protected function performV6( string $ip ): string
 	{
+/*		foreach( $this->options['whitelist'] as $allowed ){
+			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
+				return '';
+		}
+		return 'Access for your IP ('.$ip.') denied';*/
 		return '';
 	}
 }

@@ -1,14 +1,15 @@
 <?php
-class View_Test_Remove extends View{
-
-	public function render(){
-		$id		= $this->get( 'id' );
-		$data	= $this->get( 'item' );
+class View_Test_Remove extends View
+{
+	public function render(): string
+	{
+		$id		= $this->data->get( 'id' );
+		$data	= $this->data->get( 'item' );
 		$rows	= array();
-		foreach( $data['data'] as $key => $value ){
-			if( in_array( $key, array( 'id' ) ) )
+		foreach( $data->data as $key => $value ){
+			if( in_array( $key, ['id'] ) )
 				continue;
-			if( in_array( $key, array( 'createdAt', 'modifiedAt' ) ) && $value )
+			if( in_array( $key, ['createdAt', 'modifiedAt'] ) && $value )
 				$value	= date( 'Y-m-d H:i:s', $value );
 			$rows[]	= '<dt>'.$key.'</dt><dd>'.htmlentities( $value, ENT_QUOTES, 'UTF-8' ).'</dd>';
 		}

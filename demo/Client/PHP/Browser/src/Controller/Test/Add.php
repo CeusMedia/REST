@@ -1,8 +1,12 @@
 <?php
-class Controller_Test_Add extends Controller{
 
-	public function handle( ADT_List_Dictionary $arguments ){
-		if( $this->request->getMethod() === "POST" ){
+use CeusMedia\Common\ADT\Collection\Dictionary;
+
+class Controller_Test_Add extends Controller
+{
+	public function handle( Dictionary $arguments ): string
+	{
+		if( $this->request->getMethod()->isPost() ){
 			$keys	= $this->request->get( 'key' );
 			$values	= $this->request->get( 'value' );
 			$data	= array();
@@ -16,4 +20,3 @@ class Controller_Test_Add extends Controller{
 		return $view->render();
 	}
 }
-?>

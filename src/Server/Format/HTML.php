@@ -40,7 +40,7 @@ use RuntimeException;
  *	@license		http://www.gnu.org/licenses/gpl-3.0.txt GPL 3
  *	@link			https://github.com/CeusMedia/REST
  */
-class HTML implements FormatInterface
+class HTML extends AbstractFormat implements FormatInterface
 {
 	public string $contentType	= 'text/html';
 

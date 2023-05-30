@@ -41,6 +41,19 @@ use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
  */
 interface FormatInterface
 {
+	public function getContentType(): string;
+
+	/**
+	 *	@return		string
+	 */
+	public function getExtension(): string;
+
+
+	/**
+	 *	@return		string[]
+	 */
+	public function getMimeTypes(): array;
+
 	/**
 	 *	@param		HttpResponse			$response
 	 *	@param		object|array|string		$content

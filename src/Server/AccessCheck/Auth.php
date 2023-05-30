@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+
 /**
  *	...
  *
@@ -26,7 +27,9 @@
  */
 namespace CeusMedia\REST\Server\AccessCheck;
 
+use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
 use CeusMedia\REST\Server\AbstractAccessCheck;
+use CeusMedia\REST\Server\Context;
 use CeusMedia\Router\Log;
 
 /**
@@ -41,16 +44,16 @@ use CeusMedia\Router\Log;
  */
 class Auth extends AbstractAccessCheck
 {
-	public function __construct( array $options = [] )
+	public function __construct( Context $context, array $options = [] )
 	{
 		$defaultOptions = [
 			'filePath'	=> 'users.json',
 		];
 		$options	= array_merge( $defaultOptions, $options );
-		parent::__construct( $options );
+		parent::__construct( $context, $options );
 	}
 
-	public function perform( $request ): string
+	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: Auth: perform' );
 		$split		= [];

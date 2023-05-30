@@ -1,12 +1,16 @@
-<?php
-class Controller_Test_Edit extends Controller{
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
 
-	public function handle( ADT_List_Dictionary $arguments ){
+use CeusMedia\Common\ADT\Collection\Dictionary;
+
+class Controller_Test_Edit extends Controller
+{
+	public function handle( Dictionary $arguments ): string
+	{
 		$id	= $arguments->get( 'id' );
 		if( !$id )
 			throw new RangeException( 'No valid ID given' );
-		if( $this->request->getMethod() === "POST" ){
-			$data	= $this->request->getAllFromSource( 'POST' )->getAll();
+		if( $this->request->getMethod()->isPost() ){
+			$data	= $this->request->getAllFromSource( 'POST' );
 			$this->client->put( 'test/'.$id, $data );
 			$this->redirect( 'Test/'.$id.'/edit' );
 		}
@@ -16,4 +20,3 @@ class Controller_Test_Edit extends Controller{
 		return $view->render();
 	}
 }
-?>
