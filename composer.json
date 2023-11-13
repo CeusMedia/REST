@@ -57,7 +57,7 @@
     ],
     "dev:phpunit": [
       "@dev:install-quiet",
-      "XDEBUG_MODE=coverage php vendor/bin/phpunit --configuration phpunit10.xml --testsuite units"
+      "XDEBUG_MODE=coverage php vendor/bin/phpunit --configuration phpunit.xml --testsuite units"
     ],
     "dev:rector": [
       "@dev:install-quiet",
