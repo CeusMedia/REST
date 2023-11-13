@@ -32,3 +32,4 @@ $server->addRouterRegistrySource( new JsonFileRegistrySource( 'routes.json' ) );
 //$server->registerAccessCheck( AccessCheckUser::CLASS, 'perform' );
 $server->registerAccessCheck( AccessCheckIp::CLASS, 'perform', ['whitelist' => ['127.0.0.1']] );
 $server->handleRequest();
+

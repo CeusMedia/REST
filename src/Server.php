@@ -27,7 +27,7 @@
  */
 namespace CeusMedia\REST;
 
-use CeusMedia\Common\ADT\Collection\Dictionary as Dictionary;
+use CeusMedia\Common\ADT\Collection\Dictionary;
 use CeusMedia\Common\Alg\Obj\Factory as ObjectFactory;
 use CeusMedia\Common\Alg\Obj\MethodFactory as MethodFactory;
 use CeusMedia\Common\Net\HTTP\Header\Field as HeaderField;
@@ -86,18 +86,35 @@ class Server
 	/** @var FormatInterface[] array  */
 	protected array $formats		= [];
 
+	/** @var Context $context */
 	protected Context $context;
 
+	/** @var array $accessChecks */
 	protected array $accessChecks	= [];
 
 	/**
-	 * @param		array		$options
-	 * @throws		ReflectionException
+	 *	Static constructor.
+	 *	@param		Dictionary|array		$options
+	 *	@throws		ReflectionException
 	 */
-	public function __construct( array $options = [] )
+	public static function create( Dictionary|array $options = [] ): self
+	{
+		return new self( $options );
+	}
+
+	/**
+	 *	Constructor.
+	 *	@param		Dictionary|array		$options
+	 *	@throws		ReflectionException
+	 */
+	public function __construct( Dictionary|array $options = [] )
 	{
 		if( FALSE === getenv( 'HTTP_HOST' ) )
 			throw new RuntimeException( 'Server can only run in an HTTP environment' );
+
+		if( $options instanceof Dictionary)
+			/** @var array $options */
+			$options	= $options->getAll();
 
 		Log::debug( 'REST Server: Construction' );
 		$this->options	= new Dictionary( $this->mergeOptions( $this->defaultOptions, $options ) );
@@ -206,9 +223,9 @@ class Server
 	 *	@param		string		$message
 	 *	@param		string		$file
 	 *	@param		int			$line
-	 *	@return		void
+	 *	@return		never
 	 */
-	public function handleError( int $code, string $message, string $file, int $line ): void
+	public function handleError( int $code, string $message, string $file, int $line ): never
 	{
 		Log::error( $message );
 		$this->log( 500, $code );

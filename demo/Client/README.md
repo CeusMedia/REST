@@ -12,5 +12,5 @@
 		print_r( $data );
 	}
 	catch( Exception $e ){
-		print( \UI_HTML_Exception_Page::display( $e ) );
+		print( \CeusMedia\Common\UI\HTML\\Exception\Page::display( $e ) );
 	}
