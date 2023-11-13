@@ -6,3 +6,34 @@
 ![PHPStan level](https://img.shields.io/badge/PHPStan_level-max+strict-darkgreen?style=flat-square)
 
 HTTP RESTful Server and Client implemented in PHP.
+
+## Examples
+
+### Server
+
+```
+use CeusMedia\REST;
+use CeusMedia\Router;
+
+$server	= new REST\Server( [
+	'forceMimeType' => 'application/json',
+] );
+$server->addRouterRegistrySource( new Router\Registry\Source\JsonFile( 'routes.json' ) );
+$server->handleRequest();
+```
+
+### Client
+```
+$baseUri	= 'https://mydomain.tld/path/to/server/';
+
+$client	= new \CeusMedia\REST\Client( $baseUri );
+$client->expectFormat( 'JSON' );
+
+try{
+	$data = $client->get( 'resource/path?argument=value' );
+	print_r( $data );
+}
+catch( Exception $e ){
+	print \CeusMedia\Common\UI\HTML\Exception\Page::display( $e );
+}
+```
