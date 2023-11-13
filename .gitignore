@@ -4,4 +4,6 @@
 /doc/Test
 #demo/Server/data/*
 /.phpunit.result.cache
+/.phpunit.cache
+/.idea
 *.log
