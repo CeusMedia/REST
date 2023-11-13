@@ -55,9 +55,9 @@ interface FormatInterface
 	public function getMimeTypes(): array;
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
+	 *	@param		HttpResponse							$response
+	 *	@param		object|array|string|int|float|bool		$content
 	 *	@return		string
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string;
+	public function transform( HttpResponse $response, object|array|string|int|float|bool $content ): string;
 }

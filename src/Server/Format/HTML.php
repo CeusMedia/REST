@@ -28,6 +28,7 @@
 namespace CeusMedia\REST\Server\Format;
 
 use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
+use CeusMedia\Common\Renderable;
 use RuntimeException;
 
 /**
@@ -42,23 +43,29 @@ use RuntimeException;
  */
 class HTML extends AbstractFormat implements FormatInterface
 {
+	/** @var string $contentType */
 	public string $contentType	= 'text/html';
 
+	/** @var string $extension */
 	public string $extension	= '.html';
 
 	public array $mimeTypes		= ['text/html'];
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
+	 *	@param		HttpResponse							$response
+	 *	@param		object|array|string|int|float|bool		$content
 	 *	@return		string
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string
+	public function transform( HttpResponse $response, object|array|string|int|float|bool $content ): string
 	{
-		if( is_object( $content ) )
+		if( $content instanceof Renderable)
+			$content	= $content->render();
+		if( $content instanceof \Stringable)
 			$content	= (string) $content;
 		if( is_array( $content ) )
 			$content	= $this->flattenArray( $content );
+		if( is_scalar( $content ) )
+			$content	= (string) $content;
 		if( !is_string( $content ) )
 			throw new RuntimeException( 'Content could not be transformed to string' );
 		$response->addHeaderPair( 'Content-Type', $this->contentType );

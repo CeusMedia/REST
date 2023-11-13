@@ -41,18 +41,21 @@ use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
  */
 class PHP extends AbstractFormat implements FormatInterface
 {
+	/** @var string $contentType */
 	public string $contentType	= 'application/x-php';
 
+	/** @var string $extension */
 	public string $extension	= '.php';
 
+	/** @var string[] $mimeTypes */
 	public array $mimeTypes		= ['application/x-php'];
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
+	 *	@param		HttpResponse							$response
+	 *	@param		object|array|string|int|float|bool		$content
 	 *	@return		string
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string
+	public function transform( HttpResponse $response, object|array|string|int|float|bool $content ): string
 	{
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return serialize( $content );

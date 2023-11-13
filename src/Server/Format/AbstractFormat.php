@@ -41,10 +41,13 @@ namespace CeusMedia\REST\Server\Format;
 
 abstract class AbstractFormat
 {
+	/** @var string $contentType */
 	public string $contentType	= '';
 
+	/** @var string $extension */
 	public string $extension	= '';
 
+	/** @var string[] $mimeTypes */
 	public array $mimeTypes		= [];
 
 	/**

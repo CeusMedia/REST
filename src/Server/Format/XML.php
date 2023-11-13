@@ -41,8 +41,10 @@ use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
  */
 class XML extends AbstractFormat implements FormatInterface
 {
+	/** @var string $contentType */
 	public string $contentType	= 'application/xhtml+xml';
 
+	/** @var string $extension */
 	public string $extension	= '.xml';
 
 	public array $mimeTypes		= [
@@ -52,11 +54,11 @@ class XML extends AbstractFormat implements FormatInterface
 	];
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
+	 *	@param		HttpResponse							$response
+	 *	@param		object|array|string|int|float|bool		$content
 	 *	@return		string
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string
+	public function transform( HttpResponse $response, object|array|string|int|float|bool $content ): string
 	{
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return serialize( $content );

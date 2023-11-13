@@ -28,6 +28,7 @@
 namespace CeusMedia\REST;
 
 use CeusMedia\Common\FS\Folder\Editor as FolderEditor;
+use CeusMedia\Common\Net\HTTP\Header\Field;
 use CeusMedia\Common\Net\HTTP\Header\Parser as HttpHeaderParser;
 use CeusMedia\Router\Log;
 use CurlHandle;
@@ -288,7 +289,9 @@ class Client
 		$responseHeaderFields	= HttpHeaderParser::parse( $this->responseHeader );
 
 		$links		= [];
-		foreach( $responseHeaderFields->getFieldsByName( 'Link' ) as $link ){
+		/** @var array<Field> $fields */
+		$fields		= $responseHeaderFields->getFieldsByName( 'Link' );
+		foreach( $fields as $link ){
 			$value	= $link->getValue();
 /*			if( preg_match( "/;rel=[^;])/", $value ) ){}*/
 			$links[]	= $value;
@@ -325,12 +328,16 @@ class Client
 	{
 		if( NULL !== $this->logRequests ){
 			$info		= curl_getinfo( $this->handler );
+			/** @var string $method */
+			$method		= $this->getCurlOption( CURLOPT_CUSTOMREQUEST );
+			/** @var string $url */
+			$url		= $this->getCurlOption( CURLOPT_URL );
 			$message	= sprintf(
 				'%s %s %d %s',
 				date( 'Y-m-d H:i:s' ),
-				$this->getCurlOption( CURLOPT_CUSTOMREQUEST ),
+				$method,
 				$info['http_code'],
-				$this->getCurlOption( CURLOPT_URL )
+				$url
 			);
 			error_log( $message.PHP_EOL, 3, $this->logRequests );
 		}

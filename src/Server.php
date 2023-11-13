@@ -103,10 +103,14 @@ class Server
 		$this->options	= new Dictionary( $this->mergeOptions( $this->defaultOptions, $options ) );
 //		Log::debug( '> Options: ', $this->options->getAll() );
 		Log::debug( '> Context Class: '.$this->options->get( 'classContext' ) );
+		/** @var string $contextClassName */
+		$contextClassName	= $this->options->get( 'classContext' );
 		/** @var Context $context */
-		$context			= ObjectFactory::createObject( $this->options->get( 'classContext' ) );
+		$context			= ObjectFactory::createObject( $contextClassName );
 		$this->context		= $context;
-		$accessControl			= new Dictionary( $this->options->get( 'accessControl' ) );
+		/** @var array $fields */
+		$fields				= $this->options->get( 'accessControl' );
+		$accessControl			= new Dictionary( $fields );
 		$accessControlSettings	= [
 			'allowOrigin'	=> 'Access-Control-Allow-Origin',
 			'allowMethods'	=> 'Access-Control-Allow-Methods',
@@ -114,37 +118,32 @@ class Server
 		];
 
 		foreach( $accessControlSettings as $optionKey => $headerKey ){
-			if( strlen( $accessControl->get( $optionKey ) ) > 0 ){
-				$value	= $accessControl->get( $optionKey );
-				if( strlen( trim( $value ) ) > 0 ){
-					$header	= new HeaderField( $headerKey, $value );
-					$this->context->getResponse()->addHeader( $header );
-					Log::debug( '> Access-Control: '.$optionKey.' => '.$value );
-				}
+			/** @var string $headerValue */
+			$headerValue	= $accessControl->get( $optionKey );
+			if( 0 !== strlen( $headerValue ) ){
+				$header	= new HeaderField( $headerKey, $headerValue );
+				$this->context->getResponse()->addHeader( $header );
+				Log::debug( '> Access-Control: '.$optionKey.' => '.$headerValue );
 			}
 		}
 
-		if( NULL !== $this->options->get( 'routesFile' ) ){
-			$pathName	= trim( $this->options->get( 'routesFile' ) );
-			if( 0 !== strlen( $pathName ) ){
-				$source	= new RouterRegistrySourceJsonFile( $pathName );
-				$this->getRouter()->getRegistry()->addSource( $source );
-			}
+		/** @var ?string $routesFile */
+		$routesFile	= $this->options->get( 'routesFile' );
+		if( NULL !== $routesFile && 0 !== strlen( trim( $routesFile ) ) ){
+			$source	= new RouterRegistrySourceJsonFile( trim( $routesFile ) );
+			$this->getRouter()->getRegistry()->addSource( $source );
 		}
 
-		if( NULL !== $this->options->get( 'routesFolder' ) ){
-			$pathName	= trim( $this->options->get( 'routesFolder' ) );
-			if( 0 !== strlen( $pathName ) ){
-				$source	= new RouterRegistrySourceJsonFolder( $pathName );
-				$this->getRouter()->getRegistry()->addSource( $source );
-			}
+		/** @var ?string $routesFolder */
+		$routesFolder	= $this->options->get( 'routesFolder' );
+		if( NULL !== $routesFolder && 0 !== strlen( trim( $routesFolder ) ) ){
+			$source	= new RouterRegistrySourceJsonFolder( trim( $routesFolder ) );
+			$this->getRouter()->getRegistry()->addSource( $source );
 		}
 
-		/**
-		 * @var string $format
-		 * @var bool $active
-		 */
-		foreach( $this->options->get( 'formats' ) as $format => $active ){
+		/** @var array<string,bool> $formats */
+		$formats	= $this->options->get( 'formats' );
+		foreach( $formats as $format => $active ){
 			if( $active ){
 				if( !str_starts_with( $format, '\\' ) )
 					$format	= __NAMESPACE__.'\\Server\\Format\\'.$format;
@@ -159,49 +158,46 @@ class Server
 		register_shutdown_function( [$this, "handleFatalError"] );
 	}
 
+	/**
+	 *	@param		RouterRegistrySourceInterface		$source
+	 *	@return		self
+	 */
 	public function addRouterRegistrySource( RouterRegistrySourceInterface $source ): self
 	{
 		$this->getRouter()->getRegistry()->addSource( $source );
 		return $this;
 	}
 
+	/**
+	 *	@return		Router
+	 */
 	public function getRouter(): Router
 	{
 		return $this->context->getRouter();
 	}
 
+	/**
+	 *	@return		HttpRequest
+	 */
 	public function getRequest(): HttpRequest
 	{
 		return $this->context->getRequest();
 	}
 
+	/**
+	 *	@return		HttpResponse
+	 */
 	public function getResponse(): HttpResponse
 	{
 		return $this->context->getResponse();
 	}
 
+	/**
+	 *	@return		Context
+	 */
 	public function getContext(): Context
 	{
 		return $this->context;
-	}
-
-	protected function handleException( Throwable $e ): string
-	{
-		if( $e instanceof ResolverException ){
-			$this->context->getResponse()->setStatus( 404 );
-			$result		= 'No content found for this route.';
-		}
-		else if( $e instanceof OutOfRangeException ){
-			$this->context->getResponse()->setStatus( 404 );
-		}
-		else{
-			if( (int) $this->context->getResponse()->getStatus() < 400 ){
-				$this->context->getResponse()->setStatus( 500 );
-				if( strlen( $e->getCode() ) === 3 )
-					$this->context->getResponse()->setStatus( $e->getCode() );
-			}
-		}
-		return $e->getMessage();
 	}
 
 	/**
@@ -265,11 +261,13 @@ class Server
 		try{
 			$this->context->getRouter()->setMethod( $method );
 			ob_start();
+			/** @var Route $route */
 			$route		= $this->context->getRouter()->resolve( $path );
 			Log::debug( 'REST Server: handleRequest: resolved route', $route );
 			$buffer		= ob_get_clean();
 			$this->checkAccess( $route );
 			Log::debug( 'REST Server: handleRequest: is accessible' );
+			/** @var object|array|scalar $result */
 			$result		= $this->realizeResolvedRoute( $route );
 			$format		= $this->negotiateResponseFormat();
 			Log::debug( 'REST Server: handleRequest: result:', $result );
@@ -325,6 +323,7 @@ class Server
 //		print_m($this->accessChecks);die;
 		foreach( $this->accessChecks as $accessCheck ){
 			ob_start();
+			/** @var string $error */
 			$error	= MethodFactory::staticCallClassMethod(
 				$accessCheck->className,
 				$accessCheck->method,
@@ -341,6 +340,29 @@ class Server
 				exit;
 			}
 		}
+	}
+
+	/**
+	 *	@param		Throwable		$e
+	 *	@return		string
+	 */
+	protected function handleException( Throwable $e ): string
+	{
+		if( $e instanceof ResolverException ){
+			$this->context->getResponse()->setStatus( 404 );
+			$result		= 'No content found for this route.';
+		}
+		else if( $e instanceof OutOfRangeException ){
+			$this->context->getResponse()->setStatus( 404 );
+		}
+		else{
+			if( (int) $this->context->getResponse()->getStatus() < 400 ){
+				$this->context->getResponse()->setStatus( 500 );
+				if( strlen( $e->getCode() ) === 3 )
+					$this->context->getResponse()->setStatus( $e->getCode() );
+			}
+		}
+		return $e->getMessage();
 	}
 
 	/**

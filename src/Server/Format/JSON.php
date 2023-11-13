@@ -43,19 +43,22 @@ use const JSON_PRETTY_PRINT;
  */
 class JSON extends AbstractFormat implements FormatInterface
 {
+	/** @var string $contentType */
 	public string $contentType	= 'application/json';
 
+	/** @var string $extension */
 	public string $extension	= '.json';
 
+	/** @var string[] $mimeTypes */
 	public array $mimeTypes		= ['application/json'];
 
 	/**
-	 *	@param		HttpResponse			$response
-	 *	@param		object|array|string		$content
+	 *	@param		HttpResponse							$response
+	 *	@param		object|array|string|int|float|bool		$content
 	 *	@return		string
 	 *	@throws		JsonException
 	 */
-	public function transform( HttpResponse $response, object|array|string $content ): string
+	public function transform( HttpResponse $response, object|array|string|int|float|bool $content ): string
 	{
 		$response->addHeaderPair( 'Content-Type', $this->contentType );
 		return json_encode( $content, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR );
