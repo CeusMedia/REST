@@ -29,6 +29,7 @@ namespace CeusMedia\REST\Server\AccessCheck;
 
 use CeusMedia\Common\FS\File\JSON\Reader as JsonReader;
 use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
+use CeusMedia\HydrogenFramework\Environment as FrameworkEnvironment;
 use CeusMedia\REST\Server\AbstractAccessCheck;
 use CeusMedia\REST\Server\Context;
 use CeusMedia\Router\Log;
@@ -45,7 +46,7 @@ use CeusMedia\Router\Log;
  */
 class User extends AbstractAccessCheck
 {
-	public function __construct( Context $context, array $options = [] )
+	public function __construct( Context|FrameworkEnvironment $context, array $options = [] )
 	{
 		$defaultOptions = [
 			'filePath'	=> 'users.json',

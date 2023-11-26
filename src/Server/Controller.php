@@ -26,6 +26,8 @@
  */
 namespace CeusMedia\REST\Server;
 
+use CeusMedia\HydrogenFramework\Environment as FrameworkEnvironment;
+
 /**
  *	...
  *
@@ -40,7 +42,7 @@ class Controller
 {
 	protected Context $resources;
 
-	public function __construct( Context $context )
+	public function __construct( Context|FrameworkEnvironment $context )
 	{
 		$this->resources	= $context;
 	}

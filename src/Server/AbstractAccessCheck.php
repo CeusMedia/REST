@@ -28,6 +28,7 @@
 namespace CeusMedia\REST\Server;
 
 use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
+use CeusMedia\HydrogenFramework\Environment as FrameworkEnvironment;
 
 /**
  *	...
@@ -41,10 +42,10 @@ use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
  */
 abstract class AbstractAccessCheck
 {
-	protected Context $context;
+	protected Context|FrameworkEnvironment $context;
 	protected array $options	= [];
 
-	public function __construct( Context $context, array $options = [] )
+	public function __construct( Context|FrameworkEnvironment $context, array $options = [] )
 	{
 		$this->context	= $context;
 		$this->options	= $options;

@@ -34,6 +34,7 @@ use CeusMedia\Common\Net\HTTP\Header\Field as HeaderField;
 use CeusMedia\Common\Net\HTTP\Request as HttpRequest;
 use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
 use CeusMedia\Common\Net\HTTP\Response\Sender as ResponseSender;
+use CeusMedia\HydrogenFramework\Environment as FrameworkEnvironment;
 use CeusMedia\REST\Server\Context;
 use CeusMedia\REST\Server\Format\FormatInterface;
 use CeusMedia\Router\Log;
@@ -86,8 +87,8 @@ class Server
 	/** @var FormatInterface[] array  */
 	protected array $formats		= [];
 
-	/** @var Context $context */
-	protected Context $context;
+	/** @var Context|FrameworkEnvironment $context */
+	protected Context|FrameworkEnvironment $context;
 
 	/** @var array $accessChecks */
 	protected array $accessChecks	= [];
@@ -122,7 +123,7 @@ class Server
 		Log::debug( '> Context Class: '.$this->options->get( 'classContext' ) );
 		/** @var string $contextClassName */
 		$contextClassName	= $this->options->get( 'classContext' );
-		/** @var Context $context */
+		/** @var Context|FrameworkEnvironment $context */
 		$context			= ObjectFactory::createObject( $contextClassName );
 		$this->context		= $context;
 		/** @var array $fields */
@@ -210,9 +211,9 @@ class Server
 	}
 
 	/**
-	 *	@return		Context
+	 *	@return		Context|FrameworkEnvironment
 	 */
-	public function getContext(): Context
+	public function getContext(): Context|FrameworkEnvironment
 	{
 		return $this->context;
 	}
