@@ -26,9 +26,9 @@
     "ceus-media/cache": "^0.5 | 0.5.x-dev",
     "ceus-media/doc-creator": "^0.9",
     "php-parallel-lint/php-parallel-lint": "*",
-    "phpstan/phpstan": "*",
-    "phpstan/phpstan-strict-rules": "*",
-    "phpunit/phpunit": "*"
+    "phpstan/phpstan": "^1",
+    "phpstan/phpstan-strict-rules": "^1",
+    "phpunit/phpunit": "^9.5 | ^10"
   },
   "autoload": {
     "psr-4": {
@@ -41,31 +41,35 @@
       "@dev:phpstan",
       "@dev:phpunit"
     ],
+    "dev:doc": [
+      "test -f doc/API/search.html && rm -R doc/API || true",
+      "php vendor/ceus-media/doc-creator/doc.php --config-file=util/doc.xml"
+    ],
     "dev:install-quiet": "composer install --quiet --ignore-platform-req=ext-memcache",
     "dev:update-quiet": "composer update --quiet --ignore-platform-req=ext-memcache",
     "dev:phpstan": [
       "@dev:install-quiet",
-      "XDEBUG_MODE=off vendor/bin/phpstan analyze --configuration=phpstan.neon --memory-limit=1G --verbose"
+      "XDEBUG_MODE=off vendor/bin/phpstan analyze --configuration=util/phpstan.neon --memory-limit=1G --verbose"
     ],
     "dev:phpstan-clear": [
       "@dev:install-quiet",
-      "XDEBUG_MODE=off vendor/bin/phpstan clear-result-cache --configuration=phpstan.neon --verbose"
+      "XDEBUG_MODE=off vendor/bin/phpstan clear-result-cache --configuration=util/phpstan.neon --verbose"
     ],
     "dev:phpstan-save": [
       "@dev:install-quiet",
-      "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=phpstan.neon --generate-baseline phpstan-baseline.neon --verbose"
+      "XDEBUG_MODE=off vendor/bin/phpstan analyse --configuration=util/phpstan.neon --generate-baseline util/phpstan-baseline.neon --verbose"
     ],
     "dev:phpunit": [
       "@dev:install-quiet",
-      "XDEBUG_MODE=coverage php vendor/bin/phpunit --configuration phpunit.xml --testsuite units"
+      "XDEBUG_MODE=coverage php vendor/bin/phpunit --configuration util/phpunit.xml --testsuite units"
     ],
     "dev:rector": [
       "@dev:install-quiet",
-      "vendor/bin/rector process --config=rector.php --dry-run"
+      "vendor/bin/rector process --config=util/rector.php --dry-run"
     ],
     "dev:rector-fix": [
       "@dev:install-quiet",
-      "vendor/bin/rector process --config=rector.php"
+      "vendor/bin/rector process --config=util/rector.php"
     ],
     "dev:test-syntax": [
       "@dev:install-quiet",

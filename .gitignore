@@ -3,7 +3,7 @@
 /doc/API
 /doc/Test
 #demo/Server/data/*
-/.phpunit.result.cache
-/.phpunit.cache
+/util/.phpunit.result.cache
+/util/.phpunit.cache
 /.idea
 *.log
