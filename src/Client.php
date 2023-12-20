@@ -117,10 +117,10 @@ class Client
 	 *	Create resource on server.
 	 *	@access		public
 	 *	@param		string		$path			Resource path to request
-	 *	@param		array		$data			Map of POST parameters
+	 *	@param		object|array|string		$data			Map of POST parameters
 	 *	@return		object|array|string
 	 */
-	public function post( string $path, array $data = [] ): object|array|string
+	public function post( string $path, object|array|string $data = [] ): object|array|string
 	{
 		$this->setCurlOption( CURLOPT_CUSTOMREQUEST, 'POST' );
 		$this->setCurlOption( CURLOPT_POSTFIELDS, $this->buildPostFields( $data ) );
