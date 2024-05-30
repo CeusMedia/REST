@@ -41,8 +41,8 @@
       "@dev:phpstan",
       "@dev:phpunit"
     ],
-    "dev:install-quiet": "composer install --quiet",
-    "dev:update-quiet": "composer update --quiet",
+    "dev:install-quiet": "composer install --quiet --ignore-platform-req=ext-memcache",
+    "dev:update-quiet": "composer update --quiet --ignore-platform-req=ext-memcache",
     "dev:phpstan": [
       "@dev:install-quiet",
       "XDEBUG_MODE=off vendor/bin/phpstan analyze --configuration=phpstan.neon --memory-limit=1G --verbose"
