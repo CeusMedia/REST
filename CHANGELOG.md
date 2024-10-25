@@ -11,6 +11,7 @@
   - Revamp demos.
 
 - Features
+  - Allow raw data on post.
   - Add debug logging.
   - Allow environment of Hydrogen framework as context.
 
@@ -19,9 +20,12 @@
   - Add first unit test.
 
 - General
-  - Update git ignore file.
-  - Add examples in readme.
+  - Moved config files for tools to own folder.
   - Update composer scripts.
+  - Add examples in readme.
+  - Update git ignore file.
+
+
 
 
 ## 0.3
