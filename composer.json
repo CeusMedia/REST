@@ -23,8 +23,8 @@
     "ceus-media/router": "^0.5 | 0.5.x-dev"
   },
   "require-dev": {
-    "ceus-media/cache": "^0.5 | 0.5.x-dev",
-    "ceus-media/doc-creator": "^0.9",
+    "ceus-media/cache": "^0.6 | 0.6.x-dev | ^0.5 | 0.5.x-dev",
+    "ceus-media/doc-creator": "^1.0 | 1.0.x-dev",
     "php-parallel-lint/php-parallel-lint": "*",
     "phpstan/phpstan": "^1",
     "phpstan/phpstan-strict-rules": "^1",
