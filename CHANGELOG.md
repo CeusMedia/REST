@@ -1,6 +1,29 @@
 
 # Changelog of CeusMedia/REST
 
+## 0.4
+
+- System:
+  - Upgrade to CeusMedia::Common 1.0.x.
+  - Upgrade to CeusMedia::Router 0.5.x.
+  - Upgrade to CeusMedia::Cache 0.6.x.
+  - Migrate to PHP 8.1.
+  - Revamp demos.
+
+- Features
+  - Add debug logging.
+  - Allow environment of Hydrogen framework as context.
+
+- Quality
+  - Update code quality and reach PHPStan level max+strict.
+  - Add first unit test.
+
+- General
+  - Update git ignore file.
+  - Add examples in readme.
+  - Update composer scripts.
+
+
 ## 0.3
 - Code Quality
   - Update code style.
