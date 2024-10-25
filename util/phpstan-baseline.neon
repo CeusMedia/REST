@@ -1,2 +1,76 @@
 parameters:
 	ignoreErrors:
+		-
+			message: "#^Call to method getBuffer\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 5
+			path: ../src/Server.php
+
+		-
+			message: "#^Call to method getRequest\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 8
+			path: ../src/Server.php
+
+		-
+			message: "#^Call to method getResponse\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 23
+			path: ../src/Server.php
+
+		-
+			message: "#^Call to method getRouter\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 3
+			path: ../src/Server.php
+
+		-
+			message: "#^Call to method set\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server.php
+
+		-
+			message: "#^Method CeusMedia\\\\REST\\\\Server\\:\\:getContext\\(\\) has invalid return type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 2
+			path: ../src/Server.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$context contains unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server.php
+
+		-
+			message: "#^Property CeusMedia\\\\REST\\\\Server\\:\\:\\$context has unknown class CeusMedia\\\\HydrogenFramework\\\\Environment as its type\\.$#"
+			count: 2
+			path: ../src/Server.php
+
+		-
+			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\AbstractAccessCheck\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/AbstractAccessCheck.php
+
+		-
+			message: "#^Property CeusMedia\\\\REST\\\\Server\\\\AbstractAccessCheck\\:\\:\\$context has unknown class CeusMedia\\\\HydrogenFramework\\\\Environment as its type\\.$#"
+			count: 1
+			path: ../src/Server/AbstractAccessCheck.php
+
+		-
+			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\AccessCheck\\\\Auth\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/AccessCheck/Auth.php
+
+		-
+			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\AccessCheck\\\\IP\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/AccessCheck/IP.php
+
+		-
+			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\AccessCheck\\\\User\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/AccessCheck/User.php
+
+		-
+			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\Controller\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/Controller.php
+
+		-
+			message: "#^Property CeusMedia\\\\REST\\\\Server\\\\Controller\\:\\:\\$resources \\(CeusMedia\\\\REST\\\\Server\\\\Context\\) does not accept CeusMedia\\\\HydrogenFramework\\\\Environment\\|CeusMedia\\\\REST\\\\Server\\\\Context\\.$#"
+			count: 1
+			path: ../src/Server/Controller.php
