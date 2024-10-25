@@ -2,8 +2,9 @@
 use CeusMedia\Common\Net\HTTP\Response as HttpResponse;
 use CeusMedia\REST\Server\Format\FormatInterface;
 use CeusMedia\REST\Server\Format\JSON as JsonFormat;
+use PHPUnit\Framework\TestCase;
 
-class JSONTest extends \PHPUnit\Framework\TestCase
+class JSONTest extends TestCase
 {
 	protected FormatInterface $format;
 	protected HttpResponse $response;

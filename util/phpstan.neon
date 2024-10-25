@@ -7,4 +7,8 @@ parameters:
 	level: max
 	paths:
 		- ../src
-	checkMissingIterableValueType: false
+		- ../test
+#		- ../demo
+	ignoreErrors:
+		-
+			identifier: missingType.iterableValue

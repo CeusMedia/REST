@@ -25,7 +25,7 @@
 	<builder format="HTML" theme="Default-SilverFire">
 		<path type="target">doc/API/</path>
 		<path type="documents">./</path>
-		<title version="0.2">CeusMedia::REST</title>
+		<title version="0.4.0">CeusMedia::REST</title>
 		<author email="christian.wuerker@ceusmedia.de">Christian Würker</author>
 		<company url="https://ceusmedia.de/">CeuS Media</company>
 <!--		<logo href="https://github.com/CeusMedia/REST" title="CeusMedia/REST @ GitHub">logo/construction.png</logo>-->
