@@ -7,3 +7,4 @@
 /util/.phpunit.cache
 /.idea
 *.log
+/.phpunit.result.cache
