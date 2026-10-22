@@ -40,7 +40,7 @@ use CeusMedia\HydrogenFramework\Environment as FrameworkEnvironment;
  */
 class Controller
 {
-	protected Context $resources;
+	protected Context|FrameworkEnvironment $resources;
 
 	public function __construct( Context|FrameworkEnvironment $context )
 	{
