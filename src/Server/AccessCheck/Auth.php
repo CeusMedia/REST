@@ -45,35 +45,55 @@ use CeusMedia\Router\Log;
  */
 class Auth extends AbstractAccessCheck
 {
+	/**
+	 *	Options: tokens – list of accepted tokens (empty: deny all).
+	 */
 	public function __construct( Context|FrameworkEnvironment $context, array $options = [] )
 	{
 		$defaultOptions = [
-			'filePath'	=> 'users.json',
+			'tokens'	=> [],
 		];
 		$options	= array_merge( $defaultOptions, $options );
 		parent::__construct( $context, $options );
 	}
 
+	/**
+	 *	Accepts "Authorization: Bearer <token>" (also the former "<name>=<token>" and Basic auth password).
+	 *	@param		HttpRequest		$request
+	 *	@return		string			Empty if granted, otherwise reason
+	 */
 	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: Auth: perform' );
-		$split		= [];
-		$headers	= getallheaders();
-
-		if( isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) )
-			$split	= [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
-		else if( isset( $_SERVER['HTTP_AUTHORIZATION'] ) )
-			$split	= explode( '=', $_SERVER['HTTP_AUTHORIZATION'] );
-		else if( isset( $headers['Authorization'] ) )
-			$split	= explode( '=', $headers['Authorization'] );
-
-		Log::debug( '> found: '.json_encode( $split ) );
-		if( isset( $split[1] ) ){
-			if( trim( $split[1], '"' ) === 'super_geheimes_token' ){
-				return '';
-			}
+		/** @var array<int,string> $tokens */
+		$tokens	= array_values( array_filter( (array) $this->options['tokens'], static fn( $token ): bool => is_string( $token ) && '' !== $token ) );
+		if( [] === $tokens ){
+			Log::error( 'AccessCheck: Auth: no tokens configured, access denied' );
+			return 'Access denied';
 		}
+		$given	= $this->getGivenToken( $request );
+		if( NULL !== $given )
+			foreach( $tokens as $token )
+				if( hash_equals( $token, $given ) )
+					return '';
 		Log::debug( '> Access denied' );
 		return 'Access denied';
+	}
+
+	protected function getGivenToken( HttpRequest $request ): ?string
+	{
+		if( isset( $_SERVER['PHP_AUTH_PW'] ) && is_string( $_SERVER['PHP_AUTH_PW'] ) )
+			return $_SERVER['PHP_AUTH_PW'];
+		$header	= $_SERVER['HTTP_AUTHORIZATION'] ?? NULL;
+		if( !is_string( $header ) ){
+			$value	= $request->getHeader( 'Authorization', FALSE )?->getValue();
+			$header	= is_string( $value ) ? $value : NULL;
+		}
+		if( NULL === $header || '' === trim( $header ) )
+			return NULL;
+		if( 1 === preg_match( '/^Bearer\s+(\S+)$/i', trim( $header ), $matches ) )
+			return $matches[1];
+		$parts	= explode( '=', $header, 2 );
+		return isset( $parts[1] ) ? trim( $parts[1], " \t\"" ) : NULL;
 	}
 }

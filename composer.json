@@ -18,7 +18,9 @@
   "minimum-stability": "dev",
   "require": {
     "php": "^8.3",
+    "ext-ctype": "*",
     "ext-curl": "*",
+    "psr/simple-cache": "^3.0",
     "ceus-media/common": "1.1.* | 1.1.x-dev",
     "ceus-media/router": "0.6.* | 0.6.x-dev"
   },
@@ -32,7 +34,9 @@
   },
   "autoload": {
     "psr-4": {
-        "CeusMedia\\REST\\": ["src/"]
+      "CeusMedia\\REST\\": [
+        "src/"
+      ]
     }
   },
   "scripts": {

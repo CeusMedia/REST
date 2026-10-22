@@ -1,6 +1,34 @@
 
 # Changelog of CeusMedia/REST
 
+## Unreleased (0.5.x)
+
+- Security
+  - Errors never show details (message, file, line) to clients; they are logged. Option `exposeErrors` for development.
+  - Notices, warnings and deprecations are logged and no longer stop the request; other PHP errors become exceptions.
+  - All throwables (also `Error`, `TypeError`) are answered, not only exceptions.
+  - Errors and denied access are sent in the negotiated format (e.g. `{"error":{"status":401,"message":"Access denied"}}`) instead of HTML, without `exit`.
+  - AccessCheck\Auth: no hard-coded token anymore; accepted tokens via option `tokens` (no tokens: access denied), `Bearer` scheme, constant-time comparison.
+  - AccessCheck\User: passwords from `password_hash()` (plain text still works, logged as deprecated); same message for every failure; access denied if the users file is missing (was granted).
+  - AccessCheck\IP: IPv6 and networks (CIDR) for whitelist and blacklist; blacklist is applied now; client IP respects trusted proxies (CeusMedia/Common `Request::setTrustedProxies()`); IP no longer echoed in the message; empty whitelist means everybody (minus blacklist).
+
+- Features
+  - Access checks as objects: `Server::addAccessCheck( AccessCheckInterface )`, results via `AccessResult::allow()` / `deny( status, message, headers )`. `registerAccessCheck()` still works (deprecated).
+  - `AccessCheck\RouteAccess`: roles of the route (Router) against roles of the client from an application `AuthenticatorInterface`; default roles for routes without own roles; route meta `public` opens a route. 401 if not authenticated, 403 if role missing.
+  - `AccessCheck\RateLimit`: requests per client IP and group (route meta `rateLimit` or default group) in fixed windows, counters in any PSR-16 cache; 429 with `Retry-After`.
+  - `AccessCheck\FailureLimit`: failed requests (default status 401, 403) per client IP and group (route meta `failureLimit`), denied with 429 and `Retry-After` until the period after the first failure is over; success does not reset.
+  - `AccessCheck\ResponseObserverInterface`: access checks can observe the status of every response of a resolved route.
+  - `AccessCheck\Origin`: CSRF protection for writing requests via `Sec-Fetch-Site` and `Origin`, optional allowed origins.
+  - Option `responseHeaders` for every response incl. errors; `Server::SECURE_RESPONSE_HEADERS` with recommended values.
+  - Error response body configurable: `Server::setErrorFormatter( ErrorFormatterInterface )`; default `ErrorFormatter` with optional texts by status.
+  - `NULL` as result is answered with `204 No Content`.
+  - Client errors keep their status (exception code 4xx) and message; other exceptions become 500.
+
+- Quality
+  - Tests for access checks and error handling.
+  - Require psr/simple-cache directly.
+
+
 ## 0.4
 
 - System:

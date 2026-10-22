@@ -8,6 +8,9 @@ parameters:
 	paths:
 		- ../src
 		- ../test
+	excludePaths:
+		#  controllers for tests, faulty on purpose
+		- ../test/Server/Fixture
 #		- ../demo
 	ignoreErrors:
 		-

@@ -45,6 +45,9 @@ use CeusMedia\Router\Log;
  */
 class IP extends AbstractAccessCheck
 {
+	/**
+	 *	Options: whitelist, blacklist – IPs or networks (CIDR), IPv4 and IPv6.
+	 */
 	public function __construct( Context|FrameworkEnvironment $context, array $options = [] )
 	{
 		$defaultOptions = [
@@ -54,53 +57,25 @@ class IP extends AbstractAccessCheck
 		parent::__construct( $context, array_merge( $defaultOptions, $options ) );
 	}
 
+	/**
+	 *	Grants access if the client IP is not blacklisted and whitelisted (empty whitelist: everybody).
+	 *	The client IP respects trusted proxies, see Net\HTTP\Request::setTrustedProxies().
+	 *	@param		HttpRequest		$request
+	 *	@return		string			Empty if granted, otherwise reason
+	 */
 	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: IP: perform' );
-		$ip		= $_SERVER['REMOTE_ADDR'];
+		$ip			= '' !== $request->getIp() ? $request->getIp() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' );
+		/** @var array<int,string> $whitelist */
+		$whitelist	= (array) $this->options['whitelist'];
+		/** @var array<int,string> $blacklist */
+		$blacklist	= (array) $this->options['blacklist'];
 		Log::debug( '> IP: '.$ip );
-		if( 0 !== preg_match( '/:/', $ip ) )
-			return $this->performV6( $ip );
-		return $this->performV4( $ip );
-	}
-
-	protected function performV4( string $ip ): string
-	{
-		Log::debug( '> check against V4 IP: '.$ip );
-		foreach( $this->options['whitelist'] as $allowed ){
-			Log::debug( '> ? '.$allowed );
-			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
-				return '';
-			else if( str_contains( $allowed, '/' ) ){
-				// Netzmaske prüfen
-				list( $allowed, $netmask )	= explode( '/', $allowed, 2 );
-				$x	= explode( '.', $allowed );
-				while( count( $x ) < 4 )
-					$x[]	= '0';
-				$rangeDecimal	= ip2long( vsprintf( "%u.%u.%u.%u", [
-					(int) $x[0],
-					(int) $x[1],
-					(int) $x[2],
-					(int) $x[3]
-				] ) );
-				$ipDecimal			= ip2long( $ip );
-				$wildcardDecimal	= pow( 2, ( 32 - (int) $netmask ) ) - 1;
-				$netmaskDecimal		= ~$wildcardDecimal;
-				if( ( $ipDecimal & $netmaskDecimal ) == ( $rangeDecimal & $netmaskDecimal ) )	// Netzmaske enthält die IP
-					return '';
-			}
-		}
-		Log::debug( '> Access denied' );
-		return 'Access for your IP ('.$ip.') denied';
-	}
-
-	protected function performV6( string $ip ): string
-	{
-/*		foreach( $this->options['whitelist'] as $allowed ){
-			if( $ip === $allowed )												// Exakte Übereinstimmung, direkt fertig.
-				return '';
-		}
-		return 'Access for your IP ('.$ip.') denied';*/
+		if( HttpRequest::isIpInList( $ip, $blacklist ) )
+			return 'Access denied';
+		if( [] !== $whitelist && !HttpRequest::isIpInList( $ip, $whitelist ) )
+			return 'Access denied';
 		return '';
 	}
 }

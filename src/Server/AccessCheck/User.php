@@ -54,32 +54,50 @@ class User extends AbstractAccessCheck
 		parent::__construct( $context, array_merge( $defaultOptions, $options ) );
 	}
 
+	/**
+	 *	HTTP Basic authentication against a JSON file of users:
+	 *	{"name": {"password": "<hash from password_hash()>", "enabled": true}}.
+	 *	Plain text passwords still work but are deprecated.
+	 *	@param		HttpRequest		$request
+	 *	@return		string			Empty if granted, otherwise reason (always the same for the client)
+	 */
 	public function perform( HttpRequest $request ): string
 	{
 		Log::debug( 'AccessCheck: User: perform' );
-		if( file_exists( $this->options['filePath'] ) ){
-			$data	= (array) JsonReader::load( $this->options['filePath'], TRUE );
-			$users	= [];
-			foreach( $data as $key => $value ){
-				if( isset( $value['disabled'] ) ){
-					unset( $value['disabled'] );
-					$value['enabled']	= false;
-				}
-				$users[$key]	= (object) array_merge( [
-					'password'	=> '',
-					'enabled'	=> true,
-				], $value );
+		$filePath	= (string) $this->options['filePath'];
+		if( !file_exists( $filePath ) ){
+			Log::error( 'AccessCheck: User: users file missing: '.$filePath );
+			return 'Access denied';
+		}
+		$data	= (array) JsonReader::load( $filePath, TRUE );
+		$users	= [];
+		foreach( $data as $key => $value ){
+			if( isset( $value['disabled'] ) ){
+				unset( $value['disabled'] );
+				$value['enabled']	= FALSE;
 			}
-			$givenUsername	= trim( $_SERVER['PHP_AUTH_USER'] ?? '' );
-			$givenPassword	= trim( $_SERVER['PHP_AUTH_PW'] ?? '' );
-			if( strlen( $givenUsername ) === 0 || strlen( $givenPassword ) === 0 )
-				return 'Insufficient credentials: username and password are needed';
-			if( !array_key_exists( $givenUsername, $users ) )
-				return 'User is unknown';
-			if( !$users[$givenUsername]->enabled )
-				return 'User is disabled';
-			if( $users[$givenUsername]->password !== $givenPassword )
-				return 'Password is invalid';
+			$users[$key]	= (object) array_merge( [
+				'password'	=> '',
+				'enabled'	=> TRUE,
+			], $value );
+		}
+		$givenUsername	= trim( (string) ( $_SERVER['PHP_AUTH_USER'] ?? '' ) );
+		$givenPassword	= (string) ( $_SERVER['PHP_AUTH_PW'] ?? '' );
+		if( '' === $givenUsername || '' === $givenPassword )
+			return 'Access denied';
+
+		$user		= $users[$givenUsername] ?? NULL;
+		$stored		= NULL !== $user ? (string) $user->password : '';
+		$isHash		= NULL !== password_get_info( $stored )['algo'];
+		//  verify also for unknown users, so the response time reveals nothing
+		$valid		= $isHash
+			? password_verify( $givenPassword, $stored )
+			: ( '' !== $stored && hash_equals( $stored, $givenPassword ) );
+		if( NULL !== $user && !$isHash && '' !== $stored )
+			Log::warn( 'AccessCheck: User: plain text password for "'.$givenUsername.'" is deprecated, use password_hash()' );
+		if( NULL === $user || !$user->enabled || !$valid ){
+			Log::debug( '> Access denied for user: '.$givenUsername );
+			return 'Access denied';
 		}
 		return '';
 	}
