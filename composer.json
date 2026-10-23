@@ -28,8 +28,8 @@
     "ceus-media/cache": "0.7.* | 0.7.x-dev",
     "ceus-media/doc-creator": "1.1.* | 1.1.x-dev",
     "php-parallel-lint/php-parallel-lint": "*",
-    "phpstan/phpstan": "1.*",
-    "phpstan/phpstan-strict-rules": "1.*",
+    "phpstan/phpstan": "2.*",
+    "phpstan/phpstan-strict-rules": "2.*",
     "phpunit/phpunit": "10.*"
   },
   "autoload": {

@@ -66,11 +66,21 @@ parameters:
 			path: ../src/Server/AccessCheck/User.php
 
 		-
+			message: "#^Call to method getRequest\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/Controller.php
+
+		-
+			message: "#^Call to method getResponse\\(\\) on an unknown class CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
+			count: 1
+			path: ../src/Server/Controller.php
+
+		-
 			message: "#^Parameter \\$context of method CeusMedia\\\\REST\\\\Server\\\\Controller\\:\\:__construct\\(\\) has invalid type CeusMedia\\\\HydrogenFramework\\\\Environment\\.$#"
 			count: 1
 			path: ../src/Server/Controller.php
 
 		-
-			message: "#^Property CeusMedia\\\\REST\\\\Server\\\\Controller\\:\\:\\$resources \\(CeusMedia\\\\REST\\\\Server\\\\Context\\) does not accept CeusMedia\\\\HydrogenFramework\\\\Environment\\|CeusMedia\\\\REST\\\\Server\\\\Context\\.$#"
+			message: "#^Property CeusMedia\\\\REST\\\\Server\\\\Controller\\:\\:\\$resources has unknown class CeusMedia\\\\HydrogenFramework\\\\Environment as its type\\.$#"
 			count: 1
 			path: ../src/Server/Controller.php
