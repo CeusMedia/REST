@@ -5,8 +5,8 @@
 //$baseUri	= 'http://localhost:1080/libs/REST/demo/Server/';
 $baseUri	= 'http://localhost:1080/lib/GitHub/CeusMedia/REST/demo/Server/';
 
-$authUsername	= "";
-$authPassword	= "";
+$authUsername	= "hans.testmann";	//  demo users: see demo/Server/users.json
+$authPassword	= "myPassword";
 
 $isConsole	=  FALSE === getenv( 'HTTP_HOST' );
 

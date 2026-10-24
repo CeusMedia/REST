@@ -74,6 +74,8 @@ class Server
 	protected array $defaultOptions	= [
 		'classContext'		=> Server\Context::class,
 		'forceMimeType'		=> NULL,
+		//  format for "Accept: */*" and requests without Accept header, first enabled format if not enabled
+		'defaultMimeType'	=> 'application/json',
 		'routesFile'		=> NULL,
 		'routesFolder'		=> NULL,
 		'formats'			=> [
@@ -107,6 +109,9 @@ class Server
 	/** Error levels which end the script, handled on shutdown */
 	protected const array FATAL_ERROR_LEVELS		= [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR];
 
+	/** Request variables read via getenv() (also by CeusMedia/Common), but given in $_SERVER only by some SAPIs, e.g. php -S */
+	protected const array ENVIRONMENT_KEYS	= ['HTTP_HOST', 'HTTP_REFERER', 'REMOTE_ADDR', 'REQUEST_METHOD', 'REQUEST_SCHEME', 'REQUEST_URI', 'SCRIPT_NAME'];
+
 	/** @var FormatInterface[] array  */
 	protected array $formats		= [];
 
@@ -117,6 +122,9 @@ class Server
 	protected array $accessChecks	= [];
 
 	protected ErrorFormatterInterface $errorFormatter;
+
+	/** Format requested by an extension of the path, e.g. /users.json, see resolveRoute() */
+	protected ?FormatInterface $formatByExtension	= NULL;
 
 	/**
 	 *	Static constructor.
@@ -135,6 +143,7 @@ class Server
 	 */
 	public function __construct( Dictionary|array $options = [] )
 	{
+		static::importServerVariablesToEnvironment();
 		if( FALSE === getenv( 'HTTP_HOST' ) )
 			throw new RuntimeException( 'Server can only run in an HTTP environment' );
 
@@ -315,12 +324,13 @@ class Server
 		try{
 			$this->context->getRouter()->setMethod( $method );
 			ob_start();
-			/** @var Route $route */
-			$route		= $this->context->getRouter()->resolve( $path );
+			$route		= $this->resolveRoute( $path );
 			Log::debug( 'REST Server: handleRequest: resolved route', $route );
 			$buffer		= (string) ob_get_clean();
 			$this->checkAccess( $route );
 			Log::debug( 'REST Server: handleRequest: is accessible' );
+			//  before the controller: no side effects if no format is acceptable (406)
+			$format		= $this->negotiateResponseFormat();
 			/** @var object|array|scalar|null $result */
 			$result		= $this->realizeResolvedRoute( $route );
 			if( NULL === $result ){
@@ -332,7 +342,6 @@ class Server
 				ResponseSender::sendResponse( $this->context->getResponse(), NULL, FALSE );
 				return;
 			}
-			$format		= $this->negotiateResponseFormat();
 			Log::debug( 'REST Server: handleRequest: result:', $result );
 			$content	= $format->transform( $this->context->getResponse(), $result );
 			$this->log( 200 );
@@ -400,6 +409,18 @@ class Server
 	}
 
 	/*  --  PROTECTED  --  */
+
+	/**
+	 *	Copies request variables from $_SERVER to the environment, if missing there.
+	 *	Some SAPIs, e.g. the built-in web server (php -S), do not provide them via getenv().
+	 *	@return		void
+	 */
+	protected static function importServerVariablesToEnvironment(): void
+	{
+		foreach( static::ENVIRONMENT_KEYS as $key )
+			if( FALSE === getenv( $key ) && isset( $_SERVER[$key] ) && is_string( $_SERVER[$key] ) )
+				putenv( $key.'='.$_SERVER[$key] );
+	}
 
 	/**
 	 *	@param		Route		$route
@@ -515,16 +536,78 @@ class Server
 	}
 
 	/**
-	 *	@param		array		$accepts
+	 *	Returns the enabled formats, the format of option defaultMimeType first.
+	 *	@return		array<int,FormatInterface>
+	 */
+	protected function getFormatsByPreference(): array
+	{
+		/** @var string|NULL $defaultMimeType */
+		$defaultMimeType	= $this->options->get( 'defaultMimeType' );
+		$preferred	= [];
+		$others		= [];
+		foreach( $this->formats as $format ){
+			if( in_array( $defaultMimeType, $format->getMimeTypes(), TRUE ) )
+				$preferred[]	= $format;
+			else
+				$others[]	= $format;
+		}
+		return array_merge( $preferred, $others );
+	}
+
+	/**
+	 *	Parses an Accept header into a map of media ranges and qualities,
+	 *	sorted by quality, then by specificity (type/subtype before type/* before *\/*), then by position.
+	 *	Parameters other than q are ignored.
+	 *	@param		string		$header		e.g. "text/html, application/json;q=0.9, *\/*;q=0.1"
+	 *	@return		array<string,float>
+	 */
+	protected function parseAcceptHeader( string $header ): array
+	{
+		$entries	= [];
+		foreach( explode( ',', $header ) as $position => $part ){
+			$parameters	= array_map( 'trim', explode( ';', $part ) );
+			$mimeType	= strtolower( $parameters[0] );
+			array_shift( $parameters );
+			if( 1 !== preg_match( '@^[^\s/]+/[^\s/]+$@', $mimeType ) )
+				continue;
+			$quality	= 1.0;
+			foreach( $parameters as $parameter )
+				if( 1 === preg_match( '/^q\s*=\s*([01](?:\.\d{0,3})?)$/i', $parameter, $matches ) )
+					$quality	= min( 1.0, (float) $matches[1] );
+			$specificity	= '*/*' === $mimeType ? 0 : ( str_ends_with( $mimeType, '/*' ) ? 1 : 2 );
+			$entries[]	= [$mimeType, $quality, $specificity, $position];
+		}
+		usort( $entries, static function( array $a, array $b ): int {
+			return [$b[1], $b[2], $a[3]] <=> [$a[1], $a[2], $b[3]];
+		} );
+		$accepts	= [];
+		foreach( $entries as [$mimeType, $quality] )
+			$accepts[$mimeType]	??= $quality;
+		return $accepts;
+	}
+
+	/**
+	 *	Returns the first enabled format matching the accepted media ranges (incl. type/* and *\/*).
+	 *	Media types with quality 0 are not acceptable.
+	 *	@param		array<string,float>		$accepts	Media ranges and qualities, sorted by preference
 	 *	@return		FormatInterface|NULL
 	 */
 	protected function matchAcceptsWithFormats( array $accepts ): ?FormatInterface
 	{
-		foreach( $accepts as $mimeType => $quality ){
-			foreach( $this->formats as $format ){
-				if( in_array( $mimeType, $format->getMimeTypes(), TRUE ) ){
-					Log::debug( '> matched format: '.$mimeType );
-					return $format;
+		$excluded	= array_keys( array_filter( $accepts, static fn( float $quality ): bool => $quality <= 0 ) );
+		foreach( $accepts as $range => $quality ){
+			if( $quality <= 0 )
+				continue;
+			foreach( $this->getFormatsByPreference() as $format ){
+				foreach( $format->getMimeTypes() as $mimeType ){
+					if( in_array( $mimeType, $excluded, TRUE ) )
+						continue;
+					$isMatching	= '*/*' === $range || $range === $mimeType
+						|| ( str_ends_with( $range, '/*' ) && str_starts_with( $mimeType, substr( $range, 0, -1 ) ) );
+					if( $isMatching ){
+						Log::debug( '> matched format: '.$mimeType.' by '.$range );
+						return $format;
+					}
 				}
 			}
 		}
@@ -532,41 +615,78 @@ class Server
 	}
 
 	/**
+	 *	Selects the response format: by extension of the path, by option forceMimeType or by Accept header.
+	 *	Without Accept header, every format is acceptable (format of option defaultMimeType first).
 	 *	@return		FormatInterface
+	 *	@throws		RuntimeException	with code 406 if no enabled format is acceptable for the client
+	 *	@throws		RuntimeException	with code 500 if the forced MIME type is not supported by an enabled format
 	 */
 	protected function negotiateResponseFormat(): FormatInterface
 	{
 		Log::debug( 'REST Server: negotiateResponseFormat' );
-		$path			= $this->context->getRequest()->getPath();
-		Log::debug( '> path: '.$path );
+		if( NULL !== $this->formatByExtension ){
+			Log::debug( '> format by extension: '.$this->formatByExtension->getExtension() );
+			return $this->formatByExtension;
+		}
+		/** @var string|NULL $forceMimeType */
+		$forceMimeType	= $this->options->get( 'forceMimeType' );
+		$forceMimeType	= trim( $forceMimeType ?? '' );
+		if( '' !== $forceMimeType ){
+			Log::debug( '> accepts by force: '.$forceMimeType );
+			$format	= $this->matchAcceptsWithFormats( [strtolower( $forceMimeType ) => 1.0] );
+			if( NULL === $format )
+				throw new RuntimeException( 'Forced MIME type "'.$forceMimeType.'" is not supported by an enabled format', 500 );
+			return $format;
+		}
+
 		/** @var HeaderField|NULL $acceptHeader */
 		$acceptHeader	= $this->context->getRequest()->getHeadersByName( 'Accept', TRUE );
-		if( NULL === $acceptHeader )
-			throw new RuntimeException( 'No accept header set' );
-
-		/** @var array $accepts */
-		$accepts	= $acceptHeader->getValue( TRUE );
+		$acceptValue	= NULL !== $acceptHeader ? $acceptHeader->getValue() : '';
+		$acceptValue	= is_string( $acceptValue ) ? trim( $acceptValue ) : '';
+		$accepts		= '' !== $acceptValue ? $this->parseAcceptHeader( $acceptValue ) : ['*/*' => 1.0];
 		Log::debug( '> accepts by request: '.json_encode( $accepts ) );
-		if( '' !== $this->options->get( 'forceMimeType', '' ) ){
-			$accepts	= [$this->options->get( 'forceMimeType' ) => 1];
-			Log::debug( '> accepts by force: '.json_encode( $accepts ) );
-		}
-
-		if( preg_match( '/\.\w+$/', $path ) === 0 ){
-			foreach( $this->formats as $format ){
-				$extension	= preg_quote( $format->getExtension(), '/' );
-				if( preg_match( '/'.$extension.'$/', $path ) === 1 ){
-					$accepts	= [$format->getMimeTypes()[0] => 1];
-					Log::debug( '> accepts by extension: '.json_encode( $accepts ) );
-				}
-			}
-		}
-		Log::debug( '> accepts finally: '.json_encode( $accepts ) );
 
 		$format	= $this->matchAcceptsWithFormats( $accepts );
 		if( NULL === $format )
-			throw new RuntimeException( 'Content type is not supported (no acceptable format found)' );
+			throw new RuntimeException( 'Not Acceptable', 406 );
 		return $format;
+	}
+
+	/**
+	 *	Resolves the route of a path. If there is none and the path ends with the extension
+	 *	of an enabled format (e.g. /users.json), the path without extension is resolved
+	 *	and the response is sent in this format, regardless of Accept header and forceMimeType.
+	 *	Paths containing a dot by themselves (e.g. /files/report.json) are resolved as they are first.
+	 *	@param		string		$path
+	 *	@return		Route
+	 *	@throws		ResolverException	if no route is matching
+	 */
+	protected function resolveRoute( string $path ): Route
+	{
+		$router		= $this->context->getRouter();
+		try{
+			/** @var Route $route */
+			$route	= $router->resolve( $path );
+			return $route;
+		}
+		catch( ResolverException $e ){
+			foreach( $this->formats as $format ){
+				$extension	= $format->getExtension();
+				if( '' === $extension || !str_ends_with( $path, $extension ) || $path === $extension )
+					continue;
+				try{
+					/** @var Route $route */
+					$route	= $router->resolve( substr( $path, 0, -strlen( $extension ) ) );
+				}
+				catch( ResolverException ){
+					continue;
+				}
+				Log::debug( 'REST Server: resolveRoute: format by extension '.$extension );
+				$this->formatByExtension	= $format;
+				return $route;
+			}
+			throw $e;
+		}
 	}
 
 	/**

@@ -36,6 +36,8 @@ class Demo
 		$this->router	= new Router();
 		$this->client	= new Client( $baseUri );
 		$this->client->expectFormat( 'JSON' );
+		//  demo user with role "editor", see demo/Server/users.json
+		$this->client->setBasicAuth( 'hans.testmann', 'myPassword' );
 		$this->router->setMethod( $this->request->getMethod()->get() );
 		$this->router->loadRoutesFromJsonFile( 'routes.json' );
 

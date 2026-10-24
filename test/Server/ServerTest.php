@@ -15,6 +15,8 @@ class ServerTest extends TestCase
 {
 	private array $server;
 	private string|false $errorLog;
+	/** FALSE: request variables in $_SERVER only, like the built-in web server (php -S) */
+	private bool $useEnvironment	= TRUE;
 
 	protected function setUp(): void
 	{
@@ -82,6 +84,139 @@ class ServerTest extends TestCase
 		[$status, $body]	= $this->call( 'ok', [], '/unknown' );
 		self::assertSame( 404, $status );
 		self::assertSame( 404, $this->decode( $body )['error']['status'] ?? NULL );
+	}
+
+	public function testFormatByExtension(): void
+	{
+		//  extension wins over forceMimeType (JSON by default in these tests)
+		[$status, $body, $headers]	= $this->call( 'ok', [], '/errors/ok.php' );
+		self::assertSame( 200, $status );
+		self::assertSame( serialize( ['ok' => TRUE] ), $body );
+		self::assertStringStartsWith( 'application/x-php', $headers['content-type'] ?? '' );
+
+		//  without forceMimeType: extension wins over Accept header
+		[$status, $body]	= $this->call( 'ok', ['forceMimeType' => 'text/html'], '/errors/ok.json' );
+		self::assertSame( 200, $status );
+		self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ) );
+	}
+
+	public function testRequestVariablesFromServerOnly(): void
+	{
+		$this->useEnvironment	= FALSE;
+		[$status, $body]	= $this->call( 'ok', [], '/errors/ok' );
+		self::assertSame( 200, $status );
+		self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ) );
+		self::assertSame( '/errors/ok', getenv( 'REQUEST_URI' ), 'imported to environment' );
+
+		//  environment wins, if given: $_SERVER says "nothing" (204), environment says "ok" (200)
+		putenv( 'REQUEST_URI=/errors/ok' );
+		[$status]	= $this->call( 'nothing', [], NULL, NULL, 'application/json', FALSE );
+		self::assertSame( 200, $status );
+	}
+
+	public function testFormatByAcceptHeaderWithoutForceMimeType(): void
+	{
+		foreach( [NULL, ''] as $forceMimeType ){
+			[$status, $body]	= $this->call( 'ok', ['forceMimeType' => $forceMimeType] );
+			self::assertSame( 200, $status, var_export( $forceMimeType, TRUE ) );
+			self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ) );
+		}
+		[$status, $body]	= $this->call( 'ok', ['forceMimeType' => NULL], NULL, NULL, 'application/x-php' );
+		self::assertSame( 200, $status );
+		self::assertSame( serialize( ['ok' => TRUE] ), $body );
+	}
+
+	public function testAcceptWildcards(): void
+	{
+		$noForce	= ['forceMimeType' => NULL];
+		foreach( ['*/*', 'application/*', 'image/png, */*;q=0.1'] as $accept ){
+			[$status, $body, $headers]	= $this->call( 'ok', $noForce, NULL, NULL, $accept );
+			self::assertSame( 200, $status, $accept );
+			self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ), $accept.': default format JSON' );
+			self::assertStringStartsWith( 'application/json', $headers['content-type'] ?? '', $accept );
+		}
+		//  without Accept header every format is acceptable
+		[$status, $body]	= $this->call( 'ok', $noForce, NULL, NULL, NULL );
+		self::assertSame( 200, $status );
+		self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ) );
+		//  default format by option
+		[$status, $body]	= $this->call( 'ok', $noForce + ['defaultMimeType' => 'application/x-php'], NULL, NULL, '*/*' );
+		self::assertSame( 200, $status );
+		self::assertSame( serialize( ['ok' => TRUE] ), $body );
+	}
+
+	public function testAcceptQualities(): void
+	{
+		$noForce	= ['forceMimeType' => NULL];
+		[, $body]	= $this->call( 'ok', $noForce, NULL, NULL, 'application/json;q=0.5, application/x-php' );
+		self::assertSame( serialize( ['ok' => TRUE] ), $body, 'higher quality wins' );
+		[, , $headers]	= $this->call( 'ok', $noForce, NULL, NULL, 'application/json;q=0, */*' );
+		self::assertStringStartsWith( 'text/html', $headers['content-type'] ?? '', 'quality 0 is not acceptable' );
+	}
+
+	public function testNotAcceptableBeforeController(): void
+	{
+		//  the controller would fail with 500, so 406 shows it has not been called
+		[$status, $body]	= $this->call( 'exception', ['forceMimeType' => NULL], NULL, NULL, 'image/png' );
+		self::assertSame( 406, $status );
+		self::assertSame( '406 Not Acceptable', $body );
+	}
+
+	public function testUnsupportedForcedMimeTypeIsServerError(): void
+	{
+		[$status, $body]	= $this->call( 'ok', ['forceMimeType' => 'application/xml'] );
+		self::assertSame( 500, $status );
+		self::assertStringNotContainsString( 'application/xml', $body );
+	}
+
+	public function testParseAcceptHeader(): void
+	{
+		$server	= ( new ReflectionClass( Server::class ) )->newInstanceWithoutConstructor();
+		$method	= new ReflectionMethod( Server::class, 'parseAcceptHeader' );
+		self::assertSame( [
+			'text/html'			=> 1.0,
+			'application/xml'	=> 1.0,
+			'text/css'			=> 1.0,
+			'text/xml'			=> 1.0,
+			'application/*'		=> 1.0,
+			'*/*'				=> 0.8,
+		], $method->invoke( $server, 'application/*, */*;q=0.8, text/html;level=1, Application/XML, text/css, text/xml;q=1.0, invalid' ) );
+	}
+
+	public function testForceMimeTypeWithoutAcceptHeader(): void
+	{
+		[$status, $body]	= $this->call( 'ok', [], NULL, NULL, NULL );
+		self::assertSame( 200, $status );
+		self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ) );
+	}
+
+	public function testFormatByExtensionAlsoForErrors(): void
+	{
+		[$status, $body]	= $this->call( 'exception', [], '/errors/exception.php' );
+		self::assertSame( 500, $status );
+		self::assertSame( ['error' => ['status' => 500, 'message' => 'Internal Server Error']], unserialize( $body ) );
+	}
+
+	public function testUnknownExtensionOrRouteIsNotFound(): void
+	{
+		self::assertSame( 404, $this->call( 'ok', [], '/errors/ok.txt' )[0] );
+		self::assertSame( 404, $this->call( 'ok', [], '/unknown.json' )[0] );
+		//  disabled format
+		self::assertSame( 404, $this->call( 'ok', [], '/errors/ok.xml' )[0] );
+	}
+
+	public function testRouteWithDotIsResolvedAsItIs(): void
+	{
+		[$status, $body]	= $this->call( 'ok', [], '/files/report.php', static function( Server $server ): void {
+			$route	= new Route( '/files/report.php', 'GET' );
+			$route->setController( 'Controller_Errors' );
+			$route->setAction( 'ok' );
+			$source	= new MemorySource();
+			$source->routes[]	= $route;
+			$server->addRouterRegistrySource( $source );
+		} );
+		self::assertSame( 200, $status );
+		self::assertSame( ['ok' => TRUE], json_decode( $body, TRUE ), 'not PHP, the dot belongs to the route' );
 	}
 
 	public function testDeniedAccessAsJsonWithoutExit(): void
@@ -192,11 +327,19 @@ class ServerTest extends TestCase
 	/**
 	 *	@return		array{int, string, array<string,string>}		Status, body and headers (lower case names)
 	 */
-	private function call( string $action, array $options = [], ?string $path = NULL, ?callable $setup = NULL ): array
+	private function call( string $action, array $options = [], ?string $path = NULL, ?callable $setup = NULL, ?string $accept = 'application/json', bool $clearEnvironment = TRUE ): array
 	{
 		$path	??= '/errors/'.$action;
-		foreach( ['HTTP_HOST' => 'localhost', 'REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $path, 'SCRIPT_NAME' => '/index.php', 'HTTP_ACCEPT' => 'application/json'] as $key => $value ){
-			putenv( $key.'='.$value );
+		foreach( ['HTTP_HOST' => 'localhost', 'REQUEST_METHOD' => 'GET', 'REQUEST_URI' => $path, 'SCRIPT_NAME' => '/index.php', 'HTTP_ACCEPT' => $accept] as $key => $value ){
+			if( NULL === $value ){
+				putenv( $key );
+				unset( $_SERVER[$key] );
+				continue;
+			}
+			if( $this->useEnvironment )
+				putenv( $key.'='.$value );
+			else if( $clearEnvironment )
+				putenv( $key );
 			$_SERVER[$key]	= $value;
 		}
 		//  the server context opens its own output buffer: collect everything above the current level

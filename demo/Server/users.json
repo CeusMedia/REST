@@ -1,9 +1,15 @@
 {
 	"hans.testmann": {
-		"password": "myPassword"
+		"password": "$2y$10$j1FjdZsBeK9b.U2OsLORyeofkoiYw6/oMYKWbl53T7kZoHCLqZApS",
+		"roles": ["user", "editor"]
+	},
+	"rita.reader": {
+		"password": "$2y$10$2Lt.Lb0S9Ix4P62ZIOh5yO2xBHEUW16tAoK./wjssVmNU3MBwOhPu",
+		"roles": ["user"]
 	},
 	"peter.pan": {
-		"password": "myPasswort",
-		"disabled": true
+		"password": "$2y$10$nA7O041uPdEsso/fQTBeYey.NWmD4Itmt5Vy8F8ZymUYl9ulkeKCy",
+		"roles": ["user"],
+		"enabled": false
 	}
 }

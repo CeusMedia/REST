@@ -9,7 +9,7 @@ use \CeusMedia\Router\Log;
 
 error_reporting( E_ALL );
 ini_set( 'display_errors', 'On' );
-CommonLoader::registerNew( 'php', NULL, './src/' );
+new CommonLoader( 'php', './src/' );
 new DevOutput;
 Log::$level		= Log::LEVEL_ALL;
 Log::$file		= __DIR__.'/client.log';

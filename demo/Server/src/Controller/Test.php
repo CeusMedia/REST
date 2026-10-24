@@ -5,6 +5,7 @@ use CeusMedia\REST\Server\Controller as ServerController;
 
 class Controller_Test extends ServerController
 {
+	protected Resource_Model_File_JSON $model;
 
 	public function __construct( Context $context )
 	{

@@ -22,11 +22,20 @@
   - Option `responseHeaders` for every response incl. errors; `Server::SECURE_RESPONSE_HEADERS` with recommended values.
   - Error response body configurable: `Server::setErrorFormatter( ErrorFormatterInterface )`; default `ErrorFormatter` with optional texts by status.
   - `NULL` as result is answered with `204 No Content`.
+  - Option `defaultMimeType` (default `application/json`): format for `Accept: */*` and requests without Accept header.
   - Client errors keep their status (exception code 4xx) and message; other exceptions become 500.
+
+- Fixes
+  - Format by extension works again: `/users.json` resolves the route `/users` and answers in JSON (also errors), before Accept header and `forceMimeType`. Paths matching a route as they are stay untouched.
+  - Without option `forceMimeType` the format is negotiated by Accept header again (was: 500 on every request). With `forceMimeType`, no Accept header is needed.
+  - Accept header: wildcards (`*/*`, `type/*`), qualities incl. `q=0` and parameters are respected; own parser, since the one of CeusMedia/Common drops types of the same length and quality. Without Accept header every format is acceptable.
+  - No acceptable format: `406 Not Acceptable` instead of 500, negotiated before the controller is called. Forced MIME type of a disabled format: 500.
+  - Runs on SAPIs without request variables in the environment, e.g. the built-in web server (`php -S`): missing ones are taken from `$_SERVER`.
 
 - Quality
   - Tests for access checks and error handling.
   - Require psr/simple-cache directly.
+  - Demo server uses the new access checks (Origin, RateLimit, FailureLimit, RouteAccess with a demo authenticator), hashed passwords and roles; JSON files are protected by `.htaccess`.
 
 
 ## 0.4
